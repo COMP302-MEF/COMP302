@@ -139,7 +139,7 @@ def createActivity(email:str, password:str, course_id:str, activity_text:str, le
     if not access.data:
         return {"ok": False, "error": "Access denied"}
     if activity_no_optional is not None:
-       existing = supabase.table("activities").select("*").eq("course_id", course_id).order("activity_no", activity_no_optional).execute()
+       existing = supabase.table("activities").select("*").eq("course_id", course_id).eq("activity_no", activity_no_optional).execute()
        if existing.data:
            return {"ok": False, "error": "Activity number already exists"}
        activity_no = activity_no_optional
@@ -184,7 +184,7 @@ def startActivity(email:str, password:str, course_id: str, activity_no: int) -> 
     existing = supabase.table("activities").select("*").eq("course_id", course_id).eq("activity_no", activity_no).execute()
     if not existing.data:
         return {"ok": False, "error": "Activity not found"}
-    supabase.table("activities").update({"status": "ENDED"}).eq("course_id", course_id).eq("activity_no", activity_no).execute()
+    supabase.table("activities").update({"status": "ACTIVE"}).eq("course_id", course_id).eq("activity_no", activity_no).execute()
     return {"ok": True}
 
 def endActivity(email: str, password: str, course_id: str, activity_no: int) -> dict:
@@ -197,7 +197,7 @@ def endActivity(email: str, password: str, course_id: str, activity_no: int) -> 
     existing = supabase.table("activities").select("*").eq("course_id", course_id).eq("activity_no", activity_no).execute()
     if not existing.data:
         return {"ok": False, "error": "Activity not found"}
-    supabase.table("activites").update({"status": "ENDED"}).eq("course_id", course_id).eq("activity_no", activity_no).execute()
+    supabase.table("activities").update({"status": "ENDED"}).eq("course_id", course_id).eq("activity_no", activity_no).execute()
     return {"ok": True}
 
 def exportScores(email: str, password: str, course_id: str, activity_no: int) -> dict:
