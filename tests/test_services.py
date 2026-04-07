@@ -15,23 +15,23 @@ INSTRUCTOR_PASSWORD = "testpass123"
 STUDENT_EMAIL = "student1@mef.edu.tr"
 STUDENT_PASSWORD = "testpass123"
 COURSE_ID = "COMP101"
-TEST_ACTIVITY_NO = 99  # test için özel numara, gerçek verilerle çakışmasın
+TEST_ACTIVITY_NO = 99  # tests için özel numara, gerçek verilerle çakışmasın
 
 
 # ── Fixtures ───────────────────────────────────────────────────────────────
 
 @pytest.fixture(autouse=True)
 def cleanup():
-    # test öncesi: instructor ve student şifrelerini sıfırla
+    # tests öncesi: instructor ve student şifrelerini sıfırla
     supabase.table("instructors").update({"password_hash": None}).eq("email", INSTRUCTOR_EMAIL).execute()
     supabase.table("students").update({"password_hash": None}).eq("email", STUDENT_EMAIL).execute()
-    # test aktivitesini temizle
+    # tests aktivitesini temizle
     supabase.table("score_logs").delete().eq("course_id", COURSE_ID).eq("activity_no", TEST_ACTIVITY_NO).execute()
     supabase.table("activities").delete().eq("course_id", COURSE_ID).eq("activity_no", TEST_ACTIVITY_NO).execute()
 
-    yield  # test burada çalışır
+    yield  # tests burada çalışır
 
-    # test sonrası: aynı temizliği tekrar yap
+    # tests sonrası: aynı temizliği tekrar yap
     supabase.table("score_logs").delete().eq("course_id", COURSE_ID).eq("activity_no", TEST_ACTIVITY_NO).execute()
     supabase.table("activities").delete().eq("course_id", COURSE_ID).eq("activity_no", TEST_ACTIVITY_NO).execute()
 
@@ -188,7 +188,7 @@ def test_log_score_active():
         activity_no_optional=TEST_ACTIVITY_NO
     )
     startActivity(email=INSTRUCTOR_EMAIL, password=INSTRUCTOR_PASSWORD, course_id=COURSE_ID, activity_no=TEST_ACTIVITY_NO)
-    result = logScore(email=STUDENT_EMAIL, password=STUDENT_PASSWORD, course_id=COURSE_ID, activity_no=TEST_ACTIVITY_NO, score=1.0, meta="test")
+    result = logScore(email=STUDENT_EMAIL, password=STUDENT_PASSWORD, course_id=COURSE_ID, activity_no=TEST_ACTIVITY_NO, score=1.0, meta="tests")
     assert result["ok"] is True
 
 def test_log_score_ended_fails():

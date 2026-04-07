@@ -128,7 +128,7 @@ def listActivities(email:str, password: str, course_id: str) -> dict:
     access = supabase.table("course_instructors").select("*").eq("instructor_email", email).eq("course_id", course_id).execute()
     if not access.data:
         return {"ok": False, "error": "Access denied"}
-    result = supabase.table("activities").select("activity_no_status").eq("course_id", course_id).order("activity_no").execute()
+    result = supabase.table("activities").select("activity_no, status").eq("course_id", course_id).order("activity_no").execute()
     return {"ok": True, "activities": result.data}
 
 def createActivity(email:str, password:str, course_id:str, activity_text:str, learning_objectives: list[str], activity_no_optional: int | None = None) -> dict:
@@ -223,7 +223,7 @@ def resetActivity(email: str, password: str, course_id: str, activity_no: int) -
     if not access.data:
         return {"ok": False, "error": "Access denied"}
     supabase.table("score_logs").delete().eq("course_id", course_id).eq("activity_no", activity_no).execute()
-    supabase.table("activities").update({"status": "ENDED"}).eq("course_id", course_id).eq("activity_no", activity_no).execute()
+    supabase.table("activities").update({"status": "NOT_STARTED"}).eq("course_id", course_id).eq("activity_no", activity_no).execute()
     return {"ok": True}
 
 def resetStudentPassword(email: str, password: str, course_id: str, student_email: str, new_password: str) -> dict:
@@ -236,6 +236,9 @@ def resetStudentPassword(email: str, password: str, course_id: str, student_emai
     student = _get_student(student_email)
     if not student:
         return {"ok": False, "error": "Student not found"}
+    enrollment = supabase.table("course_students").select("*").eq("student_email", student_email).eq("course_id", course_id).execute()
+    if not enrollment.data:
+        return {"ok": False, "error": "Student not enrolled in this course"}
     hashed = _hash_password(new_password)
     supabase.table("students").update({"password_hash": hashed}).eq("email", student_email).execute()
     return {"ok": True}
