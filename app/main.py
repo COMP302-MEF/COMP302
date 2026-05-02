@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from dotenv import load_dotenv
 from app import services
 
@@ -11,78 +11,66 @@ DATABASE_URL = os.environ["DATABASE_URL"]
 
 app = FastAPI()
 
-# ── Student Auth ───────────────────────────────────────────────────────────
-
-@app.post("/student/login")
-def studentLogin(*, email: str, password: str):
-    return services.studentLogin(email=email, password=password)
-
-@app.post("/student/set-password")
-def setStudentPassword(*, email: str, password: str):
-    return services.setStudentPassword(email=email, password=password)
-
-@app.post("/student/change-password")
-def changeStudentPassword(*, email: str, password: str, new_password: str, old_password: str):
-    return services.changeStudentPassword(email=email, password=password, new_password=new_password, old_password=old_password)
-
-# ── Instructor Auth ────────────────────────────────────────────────────────
-
-@app.post("/instructor/login")
-def instructorLogin(*, email: str, password: str):
-    return services.instructorLogin(email=email, password=password)
-
-@app.post("/instructor/set-password")
-def setInstructorPassword(*, email: str, password: str = None):
-    return services.setInstructorPassword(email=email, password=password)
-
-@app.post("/instructor/change-password")
-def changeInstructorPassword(*, email: str, password: str, old_password: str, new_password: str):
-    return services.changeInstructorPassword(email=email, password=password, old_password=old_password, new_password=new_password)
-
 # ── Instructor Main ────────────────────────────────────────────────────────
 
 @app.post("/instructor/list-my-courses")
-def listMyCourses(*, email: str, password: str):
-    return services.listMyCourses(email=email, password=password)
+def listMyCourses(email: str = Depends(services.verify_token_get_email)):
+    return services.listMyCourses(email=email)
 
 @app.post("/instructor/list-activities")
-def listActivities(*, email: str, password: str, course_id: str):
-    return services.listActivities(email=email, password=password, course_id=course_id)
+def listActivities(*, course_id: str, email: str = Depends(services.verify_token_get_email)):
+    return services.listActivities(email=email, course_id=course_id)
 
 @app.post("/instructor/create-activity")
-def createActivity(*, email: str, password: str, course_id: str, activity_text: str, learning_objectives: list[str], activity_no_optional: int = None):
-    return services.createActivity(email=email, password=password, course_id=course_id, activity_text=activity_text, learning_objectives=learning_objectives, activity_no_optional=activity_no_optional)
+def createActivity(*, course_id: str, activity_text: str, learning_objectives: list[str], activity_no_optional: int = None, email: str = Depends(services.verify_token_get_email)):
+    return services.createActivity(email=email, course_id=course_id, activity_text=activity_text, learning_objectives=learning_objectives, activity_no_optional=activity_no_optional)
 
 @app.post("/instructor/update-activity")
-def updateActivity(*, email: str, password: str, course_id: str, activity_no: int, patch: dict):
-    return services.updateActivity(email=email, password=password, course_id=course_id, activity_no=activity_no, patch=patch)
+def updateActivity(*, course_id: str, activity_no: int, patch: dict, email: str = Depends(services.verify_token_get_email)):
+    return services.updateActivity(email=email, course_id=course_id, activity_no=activity_no, patch=patch)
 
 @app.post("/instructor/start-activity")
-def startActivity(*, email: str, password: str, course_id: str, activity_no: int):
-    return services.startActivity(email=email, password=password, course_id=course_id, activity_no=activity_no)
+def startActivity(*, course_id: str, activity_no: int, email: str = Depends(services.verify_token_get_email)):
+    return services.startActivity(email=email, course_id=course_id, activity_no=activity_no)
 
 @app.post("/instructor/end-activity")
-def endActivity(*, email: str, password: str, course_id: str, activity_no: int):
-    return services.endActivity(email=email, password=password, course_id=course_id, activity_no=activity_no)
+def endActivity(*, course_id: str, activity_no: int, email: str = Depends(services.verify_token_get_email)):
+    return services.endActivity(email=email, course_id=course_id, activity_no=activity_no)
 
 @app.post("/instructor/export-scores")
-def exportScores(*, email: str, password: str, course_id: str, activity_no: int):
-    return services.exportScores(email=email, password=password, course_id=course_id, activity_no=activity_no)
+def exportScores(*, course_id: str, activity_no: int, email: str = Depends(services.verify_token_get_email)):
+    return services.exportScores(email=email, course_id=course_id, activity_no=activity_no)
 
 @app.post("/instructor/reset-activity")
-def resetActivity(*, email: str, password: str, course_id: str, activity_no: int):
-    return services.resetActivity(email=email, password=password, course_id=course_id, activity_no=activity_no)
-
-@app.post("/instructor/reset-student-password")
-def resetStudentPassword(*, email: str, password: str, course_id: str, student_email: str, new_password: str):
-    return services.resetStudentPassword(email=email, password=password, course_id=course_id, student_email=student_email, new_password=new_password)
+def resetActivity(*, course_id: str, activity_no: int, email: str = Depends(services.verify_token_get_email)):
+    return services.resetActivity(email=email, course_id=course_id, activity_no=activity_no)
 
 # ── Student Main ───────────────────────────────────────────────────────────
 
 @app.post("/student/get-activity")
-def getActivity(*, email: str, password: str, course_id: str, activity_no: int):
-    return services.getActivity(email=email, password=password, course_id=course_id, activity_no=activity_no)
+def getActivity(*, course_id: str, activity_no: int, email: str = Depends(services.verify_token_get_email)):
+    return services.getActivity(email=email, course_id=course_id, activity_no=activity_no)
 
 @app.post("/student/log-score")
-def logScore(*, email: str, password: str, course_id: str, activity_no: int, score: float, meta: str = None):
-    return services.logScore(email=email, password=password, course_id=course_id, activity_no=activity_no, score=score, meta=meta)
+def logScore(*, course_id: str, activity_no: int, score: float, meta: str = None, email: str = Depends(services.verify_token_get_email)):
+    return services.logScore(email=email, course_id=course_id, activity_no=activity_no, score=score, meta=meta)
+
+from pydantic import BaseModel
+from typing import List, Dict
+
+# Pydantic model to parse the incoming chat payload securely
+class ChatPayload(BaseModel):
+    course_id: str
+    activity_no: int
+    student_message: str
+    chat_history: List[Dict[str, str]]
+
+@app.post("/student/chat")
+def studentChat(payload: ChatPayload, email: str = Depends(services.verify_token_get_email)):
+    return services.studentChat(
+        email=email,
+        course_id=payload.course_id,
+        activity_no=payload.activity_no,
+        student_message=payload.student_message,
+        chat_history=payload.chat_history
+    )
