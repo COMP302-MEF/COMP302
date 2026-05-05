@@ -1,0 +1,3 @@
+GitHub Repo: https://github.com/efegunay/COMP302
+Main Branch: master
+Tags: sprint-1, sprint-2
