@@ -70,4 +70,4 @@ def seed_data():
         db.close()
 
 if __name__ == "__main__":
-    seed_data()
+    seed_data()  
