@@ -4,7 +4,7 @@ from database import Base
 import datetime
 import enum
 
-# US-C: Rol tanımlamaları
+# US-C: Rol tanımlamaları ...
 class UserRole(str, enum.Enum):
     INSTRUCTOR = "instructor"
     STUDENT = "student"
@@ -42,3 +42,6 @@ class ScoreLog(Base):
     objective_description = Column(String) # US-K: Hangi kazanım
     score = Column(Integer, default=1)
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
+       
+
+
