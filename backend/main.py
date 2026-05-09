@@ -53,3 +53,36 @@ def add_activity(activity: ActivityCreate, db: Session = Depends(get_db)):
 @app.get("/activities/user/{user_id}")
 def get_user_activities(user_id: int, db: Session = Depends(get_db)):
     return db.query(models.Activity).filter(models.Activity.user_id == user_id).all()
+# US-L: Puan Hesaplama Fonksiyonu
+def calculate_score(activity_type: str, duration: int):
+    multipliers = {
+        "Coding": 2.0,
+        "Reading": 1.0,
+        "Meeting": 1.5,
+        "Other": 0.5
+    }
+    # Eğer listede olmayan bir tip girilirse 'Other' katsayısını kullan
+    multiplier = multipliers.get(activity_type, 0.5)
+    return int(duration * multiplier)
+
+# US-L: Liderlik Tablosu (Leaderboard) Endpoint'i
+@app.get("/leaderboard")
+def get_leaderboard(db: Session = Depends(get_db)):
+    # Kullanıcıları ve toplam puanlarını getir (Büyükten küçüğe sırala)
+    # Şimdilik basitlik adına aktivitelerden anlık hesaplayalım
+    users = db.query(models.User).all()
+    leaderboard = []
+    
+    for user in users:
+        # Bu kullanıcının tüm aktivitelerini bul
+        activities = db.query(models.Activity).filter(models.Activity.user_id == user.id).all()
+        # Aktiviteleri puanla ve topla
+        total_p = sum(calculate_score(a.activity_type, a.duration_minutes) for a in activities)
+        
+        leaderboard.append({
+            "full_name": user.full_name,
+            "total_score": total_p
+        })
+    
+    # Puanlara göre azalan sırada diz
+    return sorted(leaderboard, key=lambda x: x["total_score"], reverse=True)
