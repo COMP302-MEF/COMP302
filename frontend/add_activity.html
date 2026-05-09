@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>InClass - Aktivite Ekle</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; padding: 40px; display: flex; justify-content: center; }
+        .form-card { background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 400px; }
+        h2 { text-align: center; color: #333; }
+        label { display: block; margin-top: 10px; font-weight: bold; color: #555; }
+        select, input, textarea { width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        button:hover { background-color: #0056b3; }
+        .back-link { display: block; text-align: center; margin-top: 15px; color: #666; text-decoration: none; }
+    </style>
+</head>
+<body>
+
+<div class="form-card">
+    <h2>➕ Yeni Aktivite Ekle</h2>
+    
+    <label>Aktivite Türü</label>
+    <select id="activity_type">
+        <option value="Coding">Coding (2.0x Puan)</option>
+        <option value="Reading">Reading (1.0x Puan)</option>
+        <option value="Meeting">Meeting (1.5x Puan)</option>
+        <option value="Other">Other (0.5x Puan)</option>
+    </select>
+
+    <label>Süre (Dakika)</label>
+    <input type="number" id="duration" placeholder="Örn: 60" required>
+
+    <label>Açıklama</label>
+    <textarea id="description" rows="3" placeholder="Ne yaptığını kısaca anlat..."></textarea>
+
+    <button onclick="saveActivity()">Aktiviteyi Kaydet</button>
+    <a href="leaderboard.html" class="back-link">← Tabloya Dön</a>
+</div>
+
+<script>
+    async function saveActivity() {
+        const activityData = {
+            user_id: localStorage.getItem('user_id'), // Login'den gelen ID
+            course_id: 1, // Şimdilik COMP302 varsayıyoruz
+            activity_type: document.getElementById('activity_type').value,
+            duration_minutes: parseInt(document.getElementById('duration').value),
+            description: document.getElementById('description').value
+        };
+
+        try {
+            const response = await fetch('http://127.0.0.1:8000/activities/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(activityData)
+            });
+
+            if (response.ok) {
+                alert("Aktivite başarıyla eklendi ve puanın hesaplandı!");
+                window.location.href = 'leaderboard.html';
+            } else {
+                alert("Hata oluştu.");
+            }
+        } catch (error) {
+            console.error("Hata:", error);
+        }
+    }
+</script>
+
+</body>
+</html>
