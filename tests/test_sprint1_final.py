@@ -35,7 +35,7 @@ def test_instructor_role_check():
     inst_email = "instructor_test@mef.edu.tr"
     setInstructorPassword(email=inst_email, password=TEST_PASS)
     
-    # Eğitmen girişi ve rolün doğru tanındığını kontrol et
+    #Eğitmen girişi ve rolün doğru tanındığını kontrol et
     res = instructorLogin(email=inst_email, password=TEST_PASS)
     assert res["ok"] is True
     assert res["email"] == inst_email
