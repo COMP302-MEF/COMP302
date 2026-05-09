@@ -6,7 +6,18 @@ from pydantic import BaseModel
 from passlib.context import CryptContext
 
 app = FastAPI()
+from fastapi.middleware.cors import CORSMiddleware
 
+app = FastAPI()
+
+# CORS Ayarları: Frontend'in Backend'e erişebilmesi için şart
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # Geliştirme aşamasında her şeye izin veriyoruz
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 # Pydantic Modeli (Frontend'den gelecek verinin kalıbı)
 class ActivityCreate(BaseModel):
     user_id: int

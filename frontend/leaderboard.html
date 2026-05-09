@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>InClass - Liderlik Tablosu</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; padding: 20px; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #333; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border-bottom: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #007bff; color: white; }
+        tr:hover { background-color: #f1f1f1; }
+        .user-info { text-align: right; margin-bottom: 10px; font-size: 14px; color: #666; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="user-info">Giriş yapan: <span id="current-user">...</span></div>
+    <h2>🏆 Liderlik Tablosu</h2>
+    <table id="leaderboard-table">
+        <thead>
+            <tr>
+                <th>Sıra</th>
+                <th>Öğrenci</th>
+                <th>Toplam Puan</th>
+            </tr>
+        </thead>
+        <tbody>
+            </tbody>
+    </table>
+</div>
+
+<script>
+    // Login sayfasında kaydettiğimiz ismi çekelim
+    document.getElementById('current-user').innerText = localStorage.getItem('user_name') || "Misafir";
+
+    async function fetchLeaderboard() {
+        try {
+            const response = await fetch('http://127.0.0.1:8000/leaderboard');
+            const data = await response.json();
+            
+            const tbody = document.querySelector('#leaderboard-table tbody');
+            tbody.innerHTML = ''; // Tabloyu temizle
+
+            data.forEach((item, index) => {
+                const row = `<tr>
+                    <td>${index + 1}</td>
+                    <td>${item.full_name}</td>
+                    <td><strong>${item.total_score}</strong></td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+        } catch (error) {
+            console.error("Veri çekilemedi:", error);
+        }
+    }
+
+    // Sayfa açıldığında verileri çek
+    fetchLeaderboard();
+</script>
+
+</body>
+</html>
