@@ -1,14 +1,12 @@
 from database import engine, Base
-import models
+import models # models.py dosyasının aynı klasörde olduğundan emin ol
 
-def create_tables():
-    print("Veritabanı tabloları oluşturuluyor...")
-    try:
-        # models.py içindeki her şeyi veritabanına fiziksel tablo olarak basar
-        Base.metadata.create_all(bind=engine)
-        print("BAŞARILI: Tablolar veritabanında oluşturuldu!")
-    except Exception as e:
-        print(f"HATA OLUŞTU: {e}")
+print("Veritabanı bağlantısı kuruluyor ve tablolar oluşturuluyor...")
 
-if __name__ == "__main__":
-    create_tables()
+try:
+    # database.py içindeki engine'i kullanarak tabloları oluşturur
+    Base.metadata.create_all(bind=engine)
+    print("TEBRİKLER: Tablolar PostgreSQL içinde başarıyla oluşturuldu!")
+except Exception as e:
+    print(f"HATA: Veritabanına bağlanılamadı. Şifreni veya veritabanı adını kontrol et.")
+    print(f"Hata mesajı: {e}")
