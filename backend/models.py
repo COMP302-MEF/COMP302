@@ -13,6 +13,7 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     full_name = Column(String)
     role = Column(String, default=UserRole.STUDENT)
+    hashed_password = Column(String) # Şifreleri güvenli saklamak için
 
 class Course(Base):
     __tablename__ = "courses"

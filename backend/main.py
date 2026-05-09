@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from database import get_db
 import models
 from pydantic import BaseModel
+from passlib.context import CryptContext
 
 app = FastAPI()
 
@@ -86,3 +87,56 @@ def get_leaderboard(db: Session = Depends(get_db)):
     
     # Puanlara göre azalan sırada diz
     return sorted(leaderboard, key=lambda x: x["total_score"], reverse=True)
+
+# Şifreleme ayarları
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+class UserCreate(BaseModel):
+    email: str
+    full_name: str
+    password: str
+    role: str
+
+# US-A: Kayıt Olma Endpoint'i
+@app.post("/register")
+def register_user(user: UserCreate, db: Session = Depends(get_db)):
+    # Email daha önce alınmış mı kontrol et
+    db_user = db.query(models.User).filter(models.User.email == user.email).first()
+    if db_user:
+        raise HTTPException(status_code=400, detail="Bu email zaten kayitli.")
+    
+    # Şifreyi hash'le ve kaydet
+    hashed_pw = pwd_context.hash(user.password)
+    new_user = models.User(
+        email=user.email,
+        full_name=user.full_name,
+        hashed_password=hashed_pw,
+        role=user.role
+    )
+    db.add(new_user)
+    db.commit()
+    return {"message": "Kullanici basariyla olusturuldu!"}
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+# US-A: Giriş Yapma Endpoint'i
+@app.post("/login")
+def login(request: LoginRequest, db: Session = Depends(get_db)):
+    # 1. Kullanıcıyı mail adresinden bul
+    user = db.query(models.User).filter(models.User.email == request.email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı.")
+    
+    # 2. Şifreyi doğrula (Gelen şifre vs Hashlenmiş şifre)
+    if not pwd_context.verify(request.password, user.hashed_password):
+        raise HTTPException(status_code=400, detail="Hatalı şifre.")
+    
+    # 3. Başarılıysa kullanıcı bilgilerini dön
+    return {
+        "message": "Giriş başarılı!",
+        "user_id": user.id,
+        "full_name": user.full_name,
+        "role": user.role
+    }
