@@ -3,7 +3,7 @@
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
-    </content>d
+    </content>
     <orderEntry type="jdk" jdkName="uv (COMP302)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
