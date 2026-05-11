@@ -151,3 +151,24 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
         "full_name": user.full_name,
         "role": user.role
     }
+
+# Enrollment Şeması (Pydantic)
+class EnrollmentCreate(BaseModel):
+    user_id: int
+    course_id: int
+
+@app.post("/enrollments/add")
+def enroll_student(enrollment: EnrollmentCreate, db: Session = Depends(get_db)):
+    # Daha önce kayıt olmuş mu kontrolü
+    db_enrollment = db.query(Enrollment).filter(
+        Enrollment.user_id == enrollment.user_id,
+        Enrollment.course_id == enrollment.course_id
+    ).first()
+    
+    if db_enrollment:
+        raise HTTPException(status_code=400, detail="Öğrenci bu derse zaten kayıtlı.")
+
+    new_enrollment = Enrollment(user_id=enrollment.user_id, course_id=enrollment.course_id)
+    db.add(new_enrollment)
+    db.commit()
+    return {"message": "Derse kayıt başarıyla tamamlandı!"}
