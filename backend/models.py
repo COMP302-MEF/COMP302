@@ -36,3 +36,15 @@ class ScoreLog(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     total_score = Column(Integer, default=0)
+    
+class Enrollment(Base):
+    __tablename__ = "enrollments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    course_id = Column(Integer, ForeignKey("courses.id"))
+    enrolled_at = Column(DateTime, default=datetime.utcnow)
+
+    # İlişkiler (Opsiyonel ama rapor için iyi durur)
+    user = relationship("User")
+    course = relationship("Course")    
