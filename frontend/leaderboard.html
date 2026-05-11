@@ -3,64 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <title>InClass - Liderlik Tablosu</title>
-    <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; padding: 20px; }
-        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #333; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border-bottom: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background-color: #007bff; color: white; }
-        tr:hover { background-color: #f1f1f1; }
-        .user-info { text-align: right; margin-bottom: 10px; font-size: 14px; color: #666; }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+<nav>
+    <div class="logo">🚀 InClass Gamification</div>
+    <div class="menu">
+        <span id="user-display"></span>
+        <a href="leaderboard.html">Liderlik Tablosu</a>
+        <a href="add_activity.html">Aktivite Ekle</a>
+        <a href="#" onclick="logout()">Çıkış Yap</a>
+    </div>
+</nav>
+
 <div class="container">
-    <div class="user-info">Giriş yapan: <span id="current-user">...</span></div>
-    <h2>🏆 Liderlik Tablosu</h2>
-    <a href="add_activity.html" style="display:block; text-align:center;">+ Yeni Aktivite Ekle</a>
-    <table id="leaderboard-table">
-        <thead>
+    <h2>🏆 Haftalık Liderlik Tablosu</h2>
+    <table id="leaderboard-table" style="width:100%; border-collapse: collapse; margin-top: 20px;">
+        <thead style="background: #f1f1f1;">
             <tr>
-                <th>Sıra</th>
-                <th>Öğrenci</th>
-                <th>Toplam Puan</th>
+                <th style="padding:12px; text-align:left;">Sıra</th>
+                <th style="padding:12px; text-align:left;">Öğrenci</th>
+                <th style="padding:12px; text-align:right;">Toplam Puan</th>
             </tr>
         </thead>
-        <tbody>
-            </tbody>
+        <tbody></tbody>
     </table>
 </div>
 
 <script>
-    // Login sayfasında kaydettiğimiz ismi çekelim
-    document.getElementById('current-user').innerText = localStorage.getItem('user_name') || "Misafir";
+    // Kullanıcı ismini göster
+    document.getElementById('user-display').innerText = "Selam, " + localStorage.getItem('user_name');
 
     async function fetchLeaderboard() {
-        try {
-            const response = await fetch('http://127.0.0.1:8000/leaderboard');
-            const data = await response.json();
-            
-            const tbody = document.querySelector('#leaderboard-table tbody');
-            tbody.innerHTML = ''; // Tabloyu temizle
+        const response = await fetch('http://127.0.0.1:8000/leaderboard');
+        const data = await response.json();
+        const tbody = document.querySelector('#leaderboard-table tbody');
+        tbody.innerHTML = '';
 
-            data.forEach((item, index) => {
-                const row = `<tr>
-                    <td>${index + 1}</td>
-                    <td>${item.full_name}</td>
-                    <td><strong>${item.total_score}</strong></td>
+        data.forEach((item, index) => {
+            tbody.innerHTML += `
+                <tr>
+                    <td style="padding:12px; border-bottom:1px solid #eee;">${index + 1}</td>
+                    <td style="padding:12px; border-bottom:1px solid #eee;">${item.full_name}</td>
+                    <td style="padding:12px; border-bottom:1px solid #eee; text-align:right; font-weight:bold;">${item.total_score}</td>
                 </tr>`;
-                tbody.innerHTML += row;
-            });
-        } catch (error) {
-            console.error("Veri çekilemedi:", error);
-        }
+        });
     }
 
-    // Sayfa açıldığında verileri çek
+    function logout() {
+        localStorage.clear();
+        window.location.href = 'login.html';
+    }
+
     fetchLeaderboard();
 </script>
-
 </body>
 </html>
