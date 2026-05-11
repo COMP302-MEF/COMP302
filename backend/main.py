@@ -4,6 +4,8 @@ from database import get_db
 import models
 from pydantic import BaseModel
 from passlib.context import CryptContext
+from models import User, Course, Activity, Enrollment  # <-- Enrollment ekle
+from datetime import datetime # <-- Eğer kullanıyorsan ekle
 
 app = FastAPI()
 from fastapi.middleware.cors import CORSMiddleware
