@@ -1,7 +1,9 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Enum
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime  # <-- DateTime ekledik
 from sqlalchemy.orm import relationship
-import enum
 from database import Base
+from datetime import datetime  # <-- Bunu da eklemelisin (utcnow için)
+import enum
+from sqlalchemy import Enum as SQLEnum
 
 class UserRole(str, enum.Enum):
     STUDENT = "student"
