@@ -174,3 +174,9 @@ def enroll_student(enrollment: EnrollmentCreate, db: Session = Depends(get_db)):
     db.add(new_enrollment)
     db.commit()
     return {"message": "Derse kayıt başarıyla tamamlandı!"}
+
+@app.get("/users/{user_id}/courses")
+def get_user_courses(user_id: int, db: Session = Depends(get_db)):
+    # Enrollment tablosu üzerinden kullanıcının kayıtlı olduğu kursları çekiyoruz
+    courses = db.query(Course).join(Enrollment).filter(Enrollment.user_id == user_id).all()
+    return courses
