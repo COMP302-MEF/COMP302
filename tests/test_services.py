@@ -205,3 +205,24 @@ def test_log_score_ended_fails():
     endActivity(email=INSTRUCTOR_EMAIL, password=INSTRUCTOR_PASSWORD, course_id=COURSE_ID, activity_no=TEST_ACTIVITY_NO)
     result = logScore(email=STUDENT_EMAIL, password=STUDENT_PASSWORD, course_id=COURSE_ID, activity_no=TEST_ACTIVITY_NO, score=1.0)
     assert result["ok"] is False
+
+from app.services import getActivity, ActivityStatus
+
+def test_us1_activity_access_control():
+    # Mock data for the test
+    test_email = "student@mef.edu.tr"
+    test_course_id = "COMP302"
+    test_activity_no = 1
+    
+    # Execution: Fetching the activity as a student
+    result = getActivity(email=test_email, course_id=test_course_id, activity_no=test_activity_no)
+    
+    # Assertions to verify US-1 Requirements:
+    assert result["ok"] is True, "Activity should be accessible"
+    assert result["status"] == "ACTIVE", "Only ACTIVE activities should be returned"
+    
+    # Requirement: Return activity text
+    assert "activity_text" in result, "Response must include activity text"
+    
+    # Requirement: Do NOT expose learning objectives
+    assert "learning_objectives" not in result, "US-1 Violation: Learning objectives exposed to student" 
