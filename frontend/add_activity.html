@@ -3,49 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <title>InClass - Aktivite Ekle</title>
-    <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; padding: 40px; display: flex; justify-content: center; }
-        .form-card { background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 400px; }
-        h2 { text-align: center; color: #333; }
-        label { display: block; margin-top: 10px; font-weight: bold; color: #555; }
-        select, input, textarea { width: 100%; padding: 10px; margin: 5px 0 15px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
-        button:hover { background-color: #0056b3; }
-        .back-link { display: block; text-align: center; margin-top: 15px; color: #666; text-decoration: none; }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="form-card">
-    <h2>➕ Yeni Aktivite Ekle</h2>
+<nav>
+    <div class="logo">🚀 InClass Gamification</div>
+    <div class="menu">
+        <span id="user-display" style="margin-right: 15px; color: #ffc107;"></span>
+        <a href="leaderboard.html">Liderlik Tablosu</a>
+        <a href="add_activity.html">Aktivite Ekle</a>
+        <a href="#" onclick="logout()">Çıkış Yap</a>
+    </div>
+</nav>
+
+<div class="container">
+    <h2>➕ Yeni Aktivite Kaydı</h2>
+    <p style="text-align: center; color: #666;">Yaptığın çalışmayı seç ve puanını kazan!</p>
     
-    <label>Aktivite Türü</label>
-    <select id="activity_type">
-        <option value="Coding">Coding (2.0x Puan)</option>
-        <option value="Reading">Reading (1.0x Puan)</option>
-        <option value="Meeting">Meeting (1.5x Puan)</option>
-        <option value="Other">Other (0.5x Puan)</option>
-    </select>
+    <div style="margin-top: 20px;">
+        <label style="font-weight: bold; display: block; margin-bottom: 5px;">Ders Seçin</label>
+        <select id="course_select" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #ddd; margin-bottom: 20px;">
+            <option>Dersler yükleniyor...</option>
+        </select>
 
-    <label>Süre (Dakika)</label>
-    <input type="number" id="duration" placeholder="Örn: 60" required>
+        <label style="font-weight: bold; display: block; margin-bottom: 5px;">Aktivite Türü</label>
+        <select id="activity_type" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #ddd; margin-bottom: 20px;">
+            <option value="Coding">Coding (2.0x Puan)</option>
+            <option value="Reading">Reading (1.0x Puan)</option>
+            <option value="Meeting">Meeting (1.5x Puan)</option>
+            <option value="Other">Other (0.5x Puan)</option>
+        </select>
 
-    <label>Açıklama</label>
-    <textarea id="description" rows="3" placeholder="Ne yaptığını kısaca anlat..."></textarea>
+        <label style="font-weight: bold; display: block; margin-bottom: 5px;">Süre (Dakika)</label>
+        <input type="number" id="duration" placeholder="Örn: 45" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #ddd; margin-bottom: 20px;">
 
-    <button onclick="saveActivity()">Aktiviteyi Kaydet</button>
-    <a href="leaderboard.html" class="back-link">← Tabloya Dön</a>
+        <label style="font-weight: bold; display: block; margin-bottom: 5px;">Kısa Açıklama</label>
+        <textarea id="description" rows="3" placeholder="Neler yaptın?" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #ddd; margin-bottom: 20px;"></textarea>
+
+        <button class="btn-primary" onclick="saveActivity()" style="width: 100%; font-size: 16px;">Kaydet ve Puan Kazan</button>
+    </div>
 </div>
 
 <script>
+    // 1. GÜVENLİK VE HOŞGELDİN MESAJI
+    if (!localStorage.getItem('user_id')) {
+        window.location.href = 'login.html';
+    }
+    document.getElementById('user-display').innerText = localStorage.getItem('user_name');
+
+    // 2. KAYITLI DERSLERİ YÜKLE (US-E)
+    async function loadMyCourses() {
+        const userId = localStorage.getItem('user_id');
+        try {
+            const response = await fetch(`http://127.0.0.1:8000/users/${userId}/courses`);
+            const courses = await response.json();
+            
+            const courseSelect = document.getElementById('course_select');
+            courseSelect.innerHTML = ''; 
+
+            if (courses.length === 0) {
+                courseSelect.innerHTML = '<option value="">Hiçbir derse kayıtlı değilsiniz</option>';
+                return;
+            }
+
+            courses.forEach(course => {
+                courseSelect.innerHTML += `<option value="${course.id}">${course.course_code}</option>`;
+            });
+        } catch (error) {
+            console.error("Dersler yüklenirken hata:", error);
+        }
+    }
+
+    // 3. AKTİVİTEYİ KAYDET
     async function saveActivity() {
         const activityData = {
-            user_id: localStorage.getItem('user_id'), // Login'den gelen ID
-            course_id: 1, // Şimdilik COMP302 varsayıyoruz
+            user_id: parseInt(localStorage.getItem('user_id')),
+            course_id: parseInt(document.getElementById('course_select').value),
             activity_type: document.getElementById('activity_type').value,
             duration_minutes: parseInt(document.getElementById('duration').value),
             description: document.getElementById('description').value
         };
+
+        if (!activityData.course_id || !activityData.duration_minutes) {
+            alert("Lütfen ders ve süre bilgilerini eksiksiz girin!");
+            return;
+        }
 
         try {
             const response = await fetch('http://127.0.0.1:8000/activities/add', {
@@ -55,16 +98,24 @@
             });
 
             if (response.ok) {
-                alert("Aktivite başarıyla eklendi ve puanın hesaplandı!");
+                alert("Aktivite başarıyla kaydedildi! Puanın güncellendi.");
                 window.location.href = 'leaderboard.html';
             } else {
-                alert("Hata oluştu.");
+                const err = await response.json();
+                alert("Hata: " + err.detail);
             }
         } catch (error) {
-            console.error("Hata:", error);
+            alert("Sunucuya bağlanılamadı!");
         }
     }
-</script>
 
+    function logout() {
+        localStorage.clear();
+        window.location.href = 'login.html';
+    }
+
+    // Sayfa açıldığında dersleri getir
+    loadMyCourses();
+</script>
 </body>
 </html>
