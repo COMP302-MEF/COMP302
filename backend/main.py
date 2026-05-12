@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from passlib.context import CryptContext
 from models import User, Course, Activity, Enrollment  # <-- Enrollment ekle
 from datetime import datetime # <-- Eğer kullanıyorsan ekle
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, func # func eklendi
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, func ,CASE# func eklendi
 app = FastAPI()
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -180,3 +180,37 @@ def get_user_courses(user_id: int, db: Session = Depends(get_db)):
     # Enrollment tablosu üzerinden kullanıcının kayıtlı olduğu kursları çekiyoruz
     courses = db.query(Course).join(Enrollment).filter(Enrollment.user_id == user_id).all()
     return courses
+
+@app.get("/instructor/{instructor_id}/dashboard")
+def get_instructor_dashboard(instructor_id: int, db: Session = Depends(get_db)):
+    # 1. Eğitmenin derslerini bul
+    courses = db.query(Course).filter(Course.instructor_id == instructor_id).all()
+    course_ids = [c.id for c in courses]
+
+    if not course_ids:
+        return []
+
+    # 2. Bu derslerdeki öğrencileri ve toplam puanlarını getir
+    # Aktivite puanlarını katsayılarıyla (Coding=2, Reading=1 vb.) hesaplayan gelişmiş sorgu
+    stats = db.query(
+        User.id,
+        User.full_name,
+        User.email,
+        func.coalesce(func.sum(
+            CASE(
+                (Activity.activity_type == 'Coding', Activity.duration_minutes * 2.0),
+                (Activity.activity_type == 'Meeting', Activity.duration_minutes * 1.5),
+                (Activity.activity_type == 'Reading', Activity.duration_minutes * 1.0),
+                else_=Activity.duration_minutes * 0.5
+            )
+        ), 0).label("total_score")
+    ).join(Enrollment, User.id == Enrollment.user_id)\
+     .outerjoin(Activity, (User.id == Activity.user_id) & (Activity.course_id == Enrollment.course_id))\
+     .filter(Enrollment.course_id.in_(course_ids))\
+     .group_by(User.id).all()
+
+    # Veriyi frontend'in kolay okuyacağı bir listeye çeviriyoruz
+    return [
+        {"id": s.id, "name": s.full_name, "email": s.email, "score": s.total_score} 
+        for s in stats
+    ]
