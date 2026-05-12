@@ -2,32 +2,48 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>InClass - Giriş Yap</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f4f7f6; margin: 0; }
-        .login-card { background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 350px; }
-        h2 { text-align: center; color: #333; }
-        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-        button { width: 100%; padding: 10px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
-        button:hover { background-color: #218838; }
-        #message { text-align: center; margin-top: 10px; font-size: 14px; }
+        body { font-family: Arial, sans-serif; background-color: #f4f7f6; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        input { width: 100%; padding: 12px; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        .btn-primary { width: 100%; padding: 14px; background-color: #3498db; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 16px; }
+        .btn-primary:hover { background-color: #2980b9; }
+        #error-message { color: #e74c3c; text-align: center; margin-top: 15px; display: none; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div class="login-card">
-    <h2>InClass Giriş</h2>
-    <input type="email" id="email" placeholder="E-posta Adresi" required>
-    <input type="password" id="password" placeholder="Şifre" required>
-    <button onclick="handleLogin()">Giriş Yap</button>
-    <div id="message"></div>
+<div class="container">
+    <h2 style="text-align: center; color: #2c3e50;">🚀 InClass Giriş</h2>
+    
+    <label>E-posta</label>
+    <input type="email" id="email" placeholder="ornek@uni.edu.tr">
+
+    <label>Şifre</label>
+    <input type="password" id="password" placeholder="••••••••">
+
+    <button onclick="loginUser()" class="btn-primary">Giriş Yap</button>
+    <p id="error-message"></p>
 </div>
 
 <script>
-    async function handleLogin() {
+    // Zaten giriş yapılmışsa otomatik yönlendir
+    const existingRole = localStorage.getItem('user_role');
+    if (existingRole === 'instructor') { window.location.href = 'instructor_dashboard.html'; }
+    else if (existingRole === 'student') { window.location.href = 'leaderboard.html'; }
+
+    async function loginUser() {
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
-        const messageDiv = document.getElementById('message');
+        const errorDiv = document.getElementById('error-message');
+
+        if (!email || !password) {
+            errorDiv.innerText = "Lütfen tüm alanları doldurun!";
+            errorDiv.style.display = "block";
+            return;
+        }
 
         try {
             const response = await fetch('http://127.0.0.1:8000/login', {
@@ -36,26 +52,33 @@
                 body: JSON.stringify({ email, password })
             });
 
-            const data = await response.json();
-
             if (response.ok) {
-                messageDiv.style.color = "green";
-                messageDiv.innerText = "Giriş başarılı! Yönlendiriliyorsunuz...";
+                const data = await response.json();
                 
-                // Kullanıcı bilgilerini tarayıcı hafızasına saklayalım (Session)
-                localStorage.setItem('user_id', data.user_id);
+                // ESKİ VERİLERİ TEMİZLE
+                localStorage.clear();
+
+                // YENİ VERİLERİ STANDART İSİMLERLE KAYDET
+                localStorage.setItem('user_id', data.id);
                 localStorage.setItem('user_name', data.full_name);
                 localStorage.setItem('user_role', data.role);
 
-                // Bir sonraki sayfaya yönlendir (Şimdilik leaderboard'a gitsin)
-                setTimeout(() => { window.location.href = 'leaderboard.html'; }, 1500);
+                console.log("Giriş Başarılı:", data);
+
+                // YÖNLENDİRME
+                if (data.role === 'instructor') {
+                    window.location.href = 'instructor_dashboard.html';
+                } else {
+                    window.location.href = 'leaderboard.html';
+                }
             } else {
-                messageDiv.style.color = "red";
-                messageDiv.innerText = data.detail || "Giriş başarısız.";
+                const errData = await response.json();
+                errorDiv.innerText = "Hata: " + (errData.detail || "Giriş başarısız.");
+                errorDiv.style.display = "block";
             }
         } catch (error) {
-            messageDiv.style.color = "red";
-            messageDiv.innerText = "Sunucuya bağlanılamadı.";
+            errorDiv.innerText = "Sunucuya ulaşılamadı. Backend açık mı?";
+            errorDiv.style.display = "block";
         }
     }
 </script>

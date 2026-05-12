@@ -1,85 +1,50 @@
-from database import SessionLocal, engine, Base
-from models import User, Course, Activity, Enrollment # Enrollment eklendi
+from sqlalchemy.orm import Session
+from sqlalchemy import text
+from database import SessionLocal, engine
+import models
 from passlib.context import CryptContext
 
-# Şifreleme ayarı
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Tabloları sıfırla ve kur
+models.Base.metadata.drop_all(bind=engine)
+models.Base.metadata.create_all(bind=engine)
 
-def seed_data():
-    # 1. Önce Tabloları Sıfırla (Temiz başlangıç ve yeni tabloların oluşması için)
-    print("Eski tablolar siliniyor...")
-    Base.metadata.drop_all(bind=engine)
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__truncate_error=True)
+db = SessionLocal()
+try:
+    # Tüm tabloları zorla silmek için (PostgreSQL özel)
+    db.execute(text("DROP TABLE IF EXISTS score_logs, activities, enrollments, courses, users CASCADE;"))
+    db.commit()
+    print("Eski tablolar zorla silindi.")
+except Exception as e:
+    print("Silme sırasında hata (normal olabilir):", e)
+    db.rollback()
+
+# Sonra normal kuruluma devam et:
+models.Base.metadata.create_all(bind=engine)
+
+def seed():
+    # 1. Kullanıcılar
+    inst_pwd = pwd_context.hash("berke123")
+    std_pwd = pwd_context.hash("ogrenci123")
+
+    instructor = models.User(full_name="Berke Hoca", email="berke@uni.edu.tr", password=inst_pwd, role="instructor")
+    student = models.User(full_name="Ali Ogrenci", email="ogrenci@uni.edu.tr", password=std_pwd, role="student")
     
-    print("Tablolar yeniden oluşturuluyor (Enrollment dahil)...")
-    Base.metadata.create_all(bind=engine)
+    db.add(instructor)
+    db.add(student)
+    db.commit()
 
-    db = SessionLocal()
-    print("Veritabanı yeni sisteme göre tohumlanıyor...")
-    
-    try:
-        # 2. Eğitmen Oluştur (Berke)
-        instructor_pwd = pwd_context.hash("berke123")
-        me = User(
-            email="berke@uni.edu.tr", 
-            full_name="Berke", 
-            role="instructor",
-            hashed_password=instructor_pwd
-        )
-        db.add(me)
-        db.commit()
-        db.refresh(me)
+    # 2. Ders
+    course = models.Course(course_code="COMP302", course_name="Software Engineering", instructor_id=instructor.id)
+    db.add(course)
+    db.commit()
 
-        # 3. Öğrenci Oluştur
-        student_pwd = pwd_context.hash("ogrenci123")
-        student = User(
-            email="ogrenci@uni.edu.tr",
-            full_name="Ali Ogrenci",
-            role="student",
-            hashed_password=student_pwd
-        )
-        db.add(student)
-        db.commit()
-        db.refresh(student)
+    # 3. Kayıt (Enrollment)
+    enroll = models.Enrollment(user_id=student.id, course_id=course.id)
+    db.add(enroll)
+    db.commit()
 
-        # 4. Kurs Oluştur (Berke Hoca'ya bağlı)
-        new_course = Course(
-            course_code="COMP302", 
-            instructor_id=me.id
-        )
-        db.add(new_course)
-        db.commit()
-        db.refresh(new_course)
-
-        # 5. YENİ: Öğrenciyi Derse Kaydet (Enrollment - US-E)
-        enrollment = Enrollment(
-            user_id=student.id,
-            course_id=new_course.id
-        )
-        db.add(enrollment)
-        db.commit()
-
-        # 6. Örnek Aktivite Ekle
-        sample_act = Activity(
-            user_id=student.id,
-            course_id=new_course.id,
-            activity_type="Coding",
-            description="System integration test",
-            duration_minutes=60
-        )
-        db.add(sample_act)
-        db.commit()
-        
-        print("-" * 30)
-        print("BAŞARILI: Veritabanı sıfırlandı ve US-E (Enrollment) dahil edildi.")
-        print(f"Eğitmen: berke@uni.edu.tr / berke123")
-        print(f"Öğrenci: ogrenci@uni.edu.tr / ogrenci123")
-        print("-" * 30)
-        
-    except Exception as e:
-        print(f"HATA: Veri eklenemedi: {e}")
-        db.rollback()
-    finally:
-        db.close()
+    print("BAŞARILI: Veritabanı pırıl pırıl kuruldu!")
 
 if __name__ == "__main__":
-    seed_data()
+    seed()

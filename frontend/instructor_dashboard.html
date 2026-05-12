@@ -2,63 +2,94 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>InClass - Eğitmen Paneli</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f7f6; margin: 0; }
+        nav { background-color: #2c3e50; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+        nav a { color: white; text-decoration: none; margin-left: 15px; font-weight: bold; }
+        .container { max-width: 900px; margin: 40px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
+        th { background-color: #ecf0f1; color: #333; }
+        .badge { background:#3498db; color:white; padding: 5px 10px; border-radius: 15px; font-size: 14px; font-weight: bold; }
+        .btn-logout { background: #e74c3c; padding: 8px 15px; border-radius: 5px; }
+    </style>
 </head>
 <body>
+
 <nav>
-    <div class="logo">👨‍🏫 Eğitmen Paneli</div>
-    <div class="menu">
-        <span id="user-display" style="color: #ffc107;"></span>
-        <a href="instructor_dashboard.html">Öğrencilerim</a>
-        <a href="#" onclick="logout()">Çıkış Yap</a>
+    <div style="font-size: 20px; font-weight: bold;">👨‍🏫 Eğitmen Paneli</div>
+    <div>
+        <span id="user-display" style="color: #f1c40f; margin-right: 20px;"></span>
+        <a href="#" class="btn-logout" onclick="logout()">Çıkış Yap</a>
     </div>
 </nav>
 
 <div class="container">
-    <h2>Dersimdeki Öğrenci Performansları</h2>
+    <h2>Sınıf Listesi ve Performanslar</h2>
     <table id="student-table">
         <thead>
             <tr>
                 <th>Öğrenci Adı</th>
                 <th>E-posta</th>
-                <th>Toplam Puan</th>
-                <th>İşlem</th>
+                <th>Aktivite Puanı</th>
             </tr>
         </thead>
         <tbody>
-            </tbody>
+            <tr><td colspan="3" style="text-align: center;">Yükleniyor...</td></tr>
+        </tbody>
     </table>
 </div>
 
 <script>
-    if (localStorage.getItem('user_role') !== 'instructor') {
-        alert("Bu sayfaya sadece eğitmenler girebilir!");
-        window.location.href = 'leaderboard.html';
-    }
-    document.getElementById('user-display').innerText = "Hoca: " + localStorage.getItem('user_name');
+    // 1. KİMLİK KONTROLÜ
+    const userId = localStorage.getItem('user_id');
+    const userRole = localStorage.getItem('user_role');
+    const userName = localStorage.getItem('user_name');
 
-    async function loadStudentStats() {
-        const insId = localStorage.getItem('user_id');
-        const response = await fetch(`http://127.0.0.1:8000/instructor/${insId}/dashboard`);
-        const stats = await response.json();
-        
+    if (!userId || userRole !== 'instructor') {
+        alert("Erişim reddedildi. Lütfen eğitmen girişi yapın.");
+        window.location.href = 'login.html';
+    }
+
+    document.getElementById('user-display').innerText = "Hoş geldin, " + userName;
+
+    // 2. VERİ ÇEKME
+    async function loadStats() {
         const tbody = document.querySelector('#student-table tbody');
-        tbody.innerHTML = '';
+        try {
+            const response = await fetch(`http://127.0.0.1:8000/instructor/${userId}/dashboard`);
+            if (!response.ok) throw new Error("Veri çekilemedi.");
+            
+            const stats = await response.json();
+            tbody.innerHTML = ''; 
 
-        stats.forEach(s => {
-            tbody.innerHTML += `
-                <tr>
-                    <td>${s.name}</td>
-                    <td>${s.email}</td>
-                    <td><strong>${s.score}</strong></td>
-                    <td><button class="btn-primary" style="padding: 5px 10px;">Detay</button></td>
-                </tr>`;
-        });
+            if (stats.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Kayıtlı öğrenci bulunamadı.</td></tr>';
+                return;
+            }
+
+            stats.forEach(s => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${s.name}</strong></td>
+                        <td>${s.email}</td>
+                        <td><span class="badge">${s.score.toFixed(1)} Puan</span></td>
+                    </tr>`;
+            });
+        } catch (error) {
+            tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: red;">Hata: ${error.message}</td></tr>`;
+        }
     }
 
-    function logout() { localStorage.clear(); window.location.href = 'login.html'; }
-    loadStudentStats();
+    function logout() {
+        localStorage.clear();
+        window.location.href = 'login.html';
+    }
+
+    loadStats();
 </script>
+
 </body>
 </html>
