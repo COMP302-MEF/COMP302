@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from passlib.context import CryptContext
 from models import User, Course, Activity, Enrollment  # <-- Enrollment ekle
 from datetime import datetime # <-- Eğer kullanıyorsan ekle
-
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, func # func eklendi
 app = FastAPI()
 from fastapi.middleware.cors import CORSMiddleware
 
