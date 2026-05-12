@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>InClass - Eğitmen Paneli</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav>
+    <div class="logo">👨‍🏫 Eğitmen Paneli</div>
+    <div class="menu">
+        <span id="user-display" style="color: #ffc107;"></span>
+        <a href="instructor_dashboard.html">Öğrencilerim</a>
+        <a href="#" onclick="logout()">Çıkış Yap</a>
+    </div>
+</nav>
+
+<div class="container">
+    <h2>Dersimdeki Öğrenci Performansları</h2>
+    <table id="student-table">
+        <thead>
+            <tr>
+                <th>Öğrenci Adı</th>
+                <th>E-posta</th>
+                <th>Toplam Puan</th>
+                <th>İşlem</th>
+            </tr>
+        </thead>
+        <tbody>
+            </tbody>
+    </table>
+</div>
+
+<script>
+    if (localStorage.getItem('user_role') !== 'instructor') {
+        alert("Bu sayfaya sadece eğitmenler girebilir!");
+        window.location.href = 'leaderboard.html';
+    }
+    document.getElementById('user-display').innerText = "Hoca: " + localStorage.getItem('user_name');
+
+    async function loadStudentStats() {
+        const insId = localStorage.getItem('user_id');
+        const response = await fetch(`http://127.0.0.1:8000/instructor/${insId}/dashboard`);
+        const stats = await response.json();
+        
+        const tbody = document.querySelector('#student-table tbody');
+        tbody.innerHTML = '';
+
+        stats.forEach(s => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${s.name}</td>
+                    <td>${s.email}</td>
+                    <td><strong>${s.score}</strong></td>
+                    <td><button class="btn-primary" style="padding: 5px 10px;">Detay</button></td>
+                </tr>`;
+        });
+    }
+
+    function logout() { localStorage.clear(); window.location.href = 'login.html'; }
+    loadStudentStats();
+</script>
+</body>
+</html>
