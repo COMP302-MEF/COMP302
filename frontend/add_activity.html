@@ -40,7 +40,13 @@
         <option value="Reading">Okuma (Reading)</option>
         <option value="Meeting">Toplantı (Meeting)</option>
     </select>
-
+    <div style="background: #ecf0f1; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 20px;">
+    <div id="timer-display" style="font-size: 24px; font-weight: bold; font-family: monospace; color: #2c3e50; margin-bottom: 10px;">00:00:00</div>
+    <div style="display: flex; gap: 10px; justify-content: center;">
+        <button id="start-btn" onclick="startTimer()" style="background: #27ae60; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer;">▶ Başlat</button>
+        <button id="stop-btn" onclick="stopTimer()" style="background: #c0392b; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer;" disabled>⏹ Durdur</button>
+    </div>
+</div>
     <label>Süre (Dakika)</label>
     <input type="number" id="duration" placeholder="Örn: 60" min="1">
 
@@ -83,7 +89,45 @@
             console.error("Ders yükleme hatası:", error);
         }
     }
+     // --- US-H: KRONOMETRE MANTIĞI ---
+let startTime;
+let timerInterval;
+let secondsElapsed = 0;
 
+function startTimer() {
+    startTime = Date.now() - (secondsElapsed * 1000);
+    timerInterval = setInterval(() => {
+        secondsElapsed = Math.floor((Date.now() - startTime) / 1000);
+        updateTimerDisplay();
+    }, 1000);
+
+    document.getElementById('start-btn').disabled = true;
+    document.getElementById('stop-btn').disabled = false;
+    document.querySelector('.btn-submit').disabled = true; // Çalışırken gönderilmesin
+    document.querySelector('.btn-submit').style.opacity = "0.5";
+}
+
+function stopTimer() {
+    clearInterval(timerInterval);
+    document.getElementById('start-btn').disabled = false;
+    document.getElementById('stop-btn').disabled = true;
+    document.querySelector('.btn-submit').disabled = false;
+    document.querySelector('.btn-submit').style.opacity = "1";
+
+    // Saniyeyi dakikaya çevirip (yuvarlayarak) süre kutusuna yaz
+    const minutes = Math.max(1, Math.round(secondsElapsed / 60));
+    document.getElementById('duration').value = minutes;
+}
+
+function updateTimerDisplay() {
+    const hrs = Math.floor(secondsElapsed / 3600);
+    const mins = Math.floor((secondsElapsed % 3600) / 60);
+    const secs = secondsElapsed % 60;
+    
+    const display = `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    document.getElementById('timer-display').innerText = display;
+}
+// -------------------------------
     // 3. AKTİVİTEYİ GÖNDER
     async function submitActivity() {
         const msgDiv = document.getElementById('msg');
