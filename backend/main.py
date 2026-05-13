@@ -44,7 +44,11 @@ class ActivityCreate(BaseModel):
     duration_minutes: int
     description: str
 
+<<<<<<< HEAD
 # --- 1. GİRİŞ VE KULLANICI İŞLEMLERİ ---
+=======
+# --- ENDPOINTS ---
+>>>>>>> f45e20e389fd93cee310afc42c9e54e33217dd54
 
 @app.post("/login")
 def login(request: LoginRequest, db: Session = Depends(get_db)):
@@ -64,6 +68,7 @@ def get_user_courses(user_id: int, db: Session = Depends(get_db)):
     courses = db.query(Course).join(Enrollment).filter(Enrollment.user_id == user_id).all()
     return courses
 
+<<<<<<< HEAD
 
 # --- 2. ÖĞRENCİ İŞLEMLERİ (AKTİVİTE VE LİDERLİK) ---
 
@@ -88,6 +93,23 @@ def get_leaderboard(db: Session = Depends(get_db)):
 
 # --- 3. EĞİTMEN İŞLEMLERİ (DASHBOARD VE ONAYLAMA) ---
 
+=======
+@app.post("/activities/add")
+def add_activity(activity: ActivityCreate, db: Session = Depends(get_db)):
+    new_act = Activity(**activity.dict())
+    db.add(new_act)
+    db.commit()
+    return {"message": "Aktivite başarıyla eklendi"}
+
+@app.get("/leaderboard")
+def get_leaderboard(db: Session = Depends(get_db)):
+    results = db.query(
+        User.full_name,
+        func.sum(Activity.duration_minutes).label("total_minutes")
+    ).join(Activity).group_by(User.id).order_by(func.sum(Activity.duration_minutes).desc()).all()
+    return [{"name": r[0], "score": r[1]} for r in results]
+
+>>>>>>> f45e20e389fd93cee310afc42c9e54e33217dd54
 @app.get("/instructor/{instructor_id}/dashboard")
 def get_instructor_dashboard(instructor_id: int, db: Session = Depends(get_db)):
     courses = db.query(Course).filter(Course.instructor_id == instructor_id).all()
@@ -95,7 +117,10 @@ def get_instructor_dashboard(instructor_id: int, db: Session = Depends(get_db)):
 
     if not course_ids: return []
 
+<<<<<<< HEAD
     # Eğitmenin derslerindeki öğrencileri listele ve SADECE ONAYLI aktivitelerin katsayılı puanlarını topla
+=======
+>>>>>>> f45e20e389fd93cee310afc42c9e54e33217dd54
     stats = db.query(
         User.id,
         User.full_name,
@@ -109,6 +134,7 @@ def get_instructor_dashboard(instructor_id: int, db: Session = Depends(get_db)):
             )
         ), 0).label("total_score")
     ).join(Enrollment, User.id == Enrollment.user_id)\
+<<<<<<< HEAD
      .outerjoin(Activity, (User.id == Activity.user_id) & (Activity.course_id == Enrollment.course_id) & (Activity.status == 'approved'))\
      .filter(Enrollment.course_id.in_(course_ids))\
      .group_by(User.id).all()
@@ -156,3 +182,10 @@ def reject_activity(activity_id: int, db: Session = Depends(get_db)):
         db.commit()
         return {"message": "Aktivite reddedildi"}
     raise HTTPException(status_code=404, detail="Aktivite bulunamadı")
+=======
+     .outerjoin(Activity, (User.id == Activity.user_id) & (Activity.course_id == Enrollment.course_id))\
+     .filter(Enrollment.course_id.in_(course_ids))\
+     .group_by(User.id).all()
+
+    return [{"id": s.id, "name": s.full_name, "email": s.email, "score": s.total_score} for s in stats]
+>>>>>>> f45e20e389fd93cee310afc42c9e54e33217dd54

@@ -47,18 +47,31 @@
     <label>Açıklama</label>
     <textarea id="description" rows="3" placeholder="Bugün neler yaptın?"></textarea>
 
+<<<<<<< HEAD
     <button class="btn-submit" onclick="submitActivity()">Kaydet ve Onaya Gönder</button>
+=======
+    <button class="btn-submit" onclick="submitActivity()">Kaydet ve Puan Kazan</button>
+>>>>>>> f45e20e389fd93cee310afc42c9e54e33217dd54
     <p id="msg" style="text-align: center; font-weight: bold; margin-top: 15px;"></p>
 </div>
 
 <script>
     // 1. KİMLİK KONTROLÜ
+<<<<<<< HEAD
     let userId = localStorage.getItem('user_id');
     const userRole = localStorage.getItem('user_role');
 
     // Hata Önleyici: Eğer ID kaybolduysa Ali'nin (Öğrenci) ID'si olan 2'yi zorla kullan
     if (!userId || userId === "null" || userId === "undefined") {
         userId = "2"; 
+=======
+    const userId = localStorage.getItem('user_id');
+    const userRole = localStorage.getItem('user_role');
+
+    if (!userId || userRole !== 'student') {
+        alert("Bu sayfaya sadece öğrenciler erişebilir!");
+        window.location.href = 'login.html';
+>>>>>>> f45e20e389fd93cee310afc42c9e54e33217dd54
     }
 
     // 2. ÖĞRENCİNİN DERSLERİNİ GETİR
@@ -68,6 +81,7 @@
             const response = await fetch(`http://127.0.0.1:8000/users/${userId}/courses`);
             const courses = await response.json();
             
+<<<<<<< HEAD
             // İlk seçeneği boş bırakıyoruz ki kullanıcı kendi tıklayıp seçsin
             select.innerHTML = '<option value="">-- Lütfen Ders Seçin --</option>'; 
             
@@ -81,6 +95,18 @@
         } catch (error) {
             select.innerHTML = '<option value="">Dersler yüklenemedi!</option>';
             console.error("Ders yükleme hatası:", error);
+=======
+            select.innerHTML = ''; 
+            if (courses.length === 0) {
+                select.innerHTML = '<option value="">Kayıtlı olduğunuz ders yok.</option>';
+                return;
+            }
+            courses.forEach(c => {
+                select.innerHTML += `<option value="${c.id}">${c.course_code} - ${c.course_name}</option>`;
+            });
+        } catch (error) {
+            select.innerHTML = '<option value="">Dersler yüklenemedi!</option>';
+>>>>>>> f45e20e389fd93cee310afc42c9e54e33217dd54
         }
     }
 
@@ -92,6 +118,7 @@
         const duration = document.getElementById('duration').value;
         const desc = document.getElementById('description').value;
 
+<<<<<<< HEAD
         // Alan kontrolü
         if (!courseId || courseId === "" || !duration) {
             msgDiv.innerText = "Lütfen önce kutudan DERSİ SEÇİN ve SÜREYİ girin!";
@@ -106,6 +133,13 @@
             duration_minutes: parseInt(duration),
             description: desc || "Açıklama girilmedi"
         };
+=======
+        if (!courseId || !duration) {
+            msgDiv.innerText = "Lütfen dersi ve süreyi boş bırakmayın!";
+            msgDiv.style.color = "red";
+            return;
+        }
+>>>>>>> f45e20e389fd93cee310afc42c9e54e33217dd54
 
         try {
             msgDiv.innerText = "Gönderiliyor...";
@@ -114,6 +148,7 @@
             const response = await fetch('http://127.0.0.1:8000/activities/add', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+<<<<<<< HEAD
                 body: JSON.stringify(payload)
             });
 
@@ -131,6 +166,37 @@
             msgDiv.style.color = "red";
         }
     }
+=======
+                body: JSON.stringify({
+                    user_id: parseInt(userId),
+                    course_id: parseInt(courseId),
+                    activity_type: type,
+                    duration_minutes: parseInt(duration),
+                    description: desc
+                })
+            });
+
+            if (response.ok) {
+                msgDiv.innerText = "Aktivite başarıyla eklendi! Yönlendiriliyorsunuz...";
+                msgDiv.style.color = "green";
+                setTimeout(() => window.location.href = 'leaderboard.html', 1500);
+            } else {
+                throw new Error("Ekleme başarısız.");
+            }
+        } catch (error) {
+            msgDiv.innerText = "Hata: Sunucuya ulaşılamadı.";
+            msgDiv.style.color = "red";
+        }
+    }
+
+    function logout() {
+        localStorage.clear();
+        window.location.href = 'login.html';
+    }
+
+    loadCourses();
+</script>
+>>>>>>> f45e20e389fd93cee310afc42c9e54e33217dd54
 
     function logout() {
         localStorage.clear();

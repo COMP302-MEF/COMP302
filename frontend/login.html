@@ -3,14 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<<<<<<< HEAD
     <title>InClass - Giriş</title>
+=======
+    <title>InClass - Giriş Yap</title>
+>>>>>>> f45e20e389fd93cee310afc42c9e54e33217dd54
     <style>
         body { font-family: Arial, sans-serif; background-color: #f4f7f6; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
         .container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
         input { width: 100%; padding: 12px; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
         .btn-primary { width: 100%; padding: 14px; background-color: #3498db; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 16px; }
         .btn-primary:hover { background-color: #2980b9; }
+<<<<<<< HEAD
         #msg { text-align: center; margin-top: 15px; font-weight: bold; }
+=======
+        #error-message { color: #e74c3c; text-align: center; margin-top: 15px; display: none; font-weight: bold; }
+>>>>>>> f45e20e389fd93cee310afc42c9e54e33217dd54
     </style>
 </head>
 <body>
@@ -25,6 +33,7 @@
     <input type="password" id="password" placeholder="••••••••">
 
     <button onclick="loginUser()" class="btn-primary">Giriş Yap</button>
+<<<<<<< HEAD
     <p id="msg"></p>
 </div>
 
@@ -37,6 +46,25 @@
         if (!email || !password) {
             msgDiv.innerText = "Lütfen tüm alanları doldurun!";
             msgDiv.style.color = "red";
+=======
+    <p id="error-message"></p>
+</div>
+
+<script>
+    // Zaten giriş yapılmışsa otomatik yönlendir
+    const existingRole = localStorage.getItem('user_role');
+    if (existingRole === 'instructor') { window.location.href = 'instructor_dashboard.html'; }
+    else if (existingRole === 'student') { window.location.href = 'leaderboard.html'; }
+
+    async function loginUser() {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const errorDiv = document.getElementById('error-message');
+
+        if (!email || !password) {
+            errorDiv.innerText = "Lütfen tüm alanları doldurun!";
+            errorDiv.style.display = "block";
+>>>>>>> f45e20e389fd93cee310afc42c9e54e33217dd54
             return;
         }
 
@@ -53,12 +81,20 @@
             if (response.ok) {
                 const data = await response.json();
                 
+<<<<<<< HEAD
                 // HAFIZAYI TEMİZLE VE YENİDEN YAZ
                 localStorage.clear();
+=======
+                // ESKİ VERİLERİ TEMİZLE
+                localStorage.clear();
+
+                // YENİ VERİLERİ STANDART İSİMLERLE KAYDET
+>>>>>>> f45e20e389fd93cee310afc42c9e54e33217dd54
                 localStorage.setItem('user_id', data.id);
                 localStorage.setItem('user_name', data.full_name);
                 localStorage.setItem('user_role', data.role);
 
+<<<<<<< HEAD
                 msgDiv.innerText = `Hoş geldin ${data.full_name}! Yönlendiriliyorsun...`;
                 msgDiv.style.color = "green";
 
@@ -78,6 +114,24 @@
         } catch (error) {
             msgDiv.innerText = "Sunucuya bağlanılamadı!";
             msgDiv.style.color = "red";
+=======
+                console.log("Giriş Başarılı:", data);
+
+                // YÖNLENDİRME
+                if (data.role === 'instructor') {
+                    window.location.href = 'instructor_dashboard.html';
+                } else {
+                    window.location.href = 'leaderboard.html';
+                }
+            } else {
+                const errData = await response.json();
+                errorDiv.innerText = "Hata: " + (errData.detail || "Giriş başarısız.");
+                errorDiv.style.display = "block";
+            }
+        } catch (error) {
+            errorDiv.innerText = "Sunucuya ulaşılamadı. Backend açık mı?";
+            errorDiv.style.display = "block";
+>>>>>>> f45e20e389fd93cee310afc42c9e54e33217dd54
         }
     }
 </script>
