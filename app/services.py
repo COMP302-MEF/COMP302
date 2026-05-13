@@ -667,12 +667,13 @@ def studentChat(
 
         next_question = llm_result["reply"]
 
-    except Exception:
+    except Exception as e:
+        print(f"LLM Service Error: {e}")
         next_question = generate_guiding_question(
             activity_text=act["activity_text"],
             current_step=next_step
         )
-
+        
     update_student_progress(
         student_email=email,
         course_id=course_id,
