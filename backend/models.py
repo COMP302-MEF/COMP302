@@ -1,11 +1,7 @@
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from database import Base
-<<<<<<< HEAD
 from datetime import datetime # Import şeklini düzelttik
-=======
-import datetime
->>>>>>> f45e20e389fd93cee310afc42c9e54e33217dd54
 
 class User(Base):
     __tablename__ = "users"
@@ -36,12 +32,8 @@ class Activity(Base):
     activity_type = Column(String) # Coding, Reading, Meeting
     duration_minutes = Column(Integer)
     description = Column(String)
-<<<<<<< HEAD
     
     # datetime.datetime.utcnow yerine sadece datetime.utcnow yaptık
     timestamp = Column(DateTime, default=datetime.utcnow) 
     
     status = Column(String, default="pending") # Eğitmen onayı için yeni durum sütunu
-=======
-    timestamp = Column(DateTime, default=datetime.datetime.utcnow)
->>>>>>> f45e20e389fd93cee310afc42c9e54e33217dd54
