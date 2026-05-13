@@ -156,3 +156,24 @@ def reject_activity(activity_id: int, db: Session = Depends(get_db)):
         db.commit()
         return {"message": "Aktivite reddedildi"}
     raise HTTPException(status_code=404, detail="Aktivite bulunamadı")
+
+# US-G: Aktivite İçeriğini Güncelleme (Update)
+@app.put("/activities/{activity_id}")
+def update_activity(activity_id: int, updated_data: dict, db: Session = Depends(get_db)):
+    activity = db.query(Activity).filter(Activity.id == activity_id).first()
+    
+    if not activity:
+        raise HTTPException(status_code=404, detail="Aktivite bulunamadı.")
+    
+    # Güvenlik Kontrolü: Sadece onay bekleyen (Pending) aktiviteler değiştirilebilir
+    if activity.status != "Pending":
+        raise HTTPException(status_code=400, detail="Onaylanmış veya reddedilmiş aktiviteler değiştirilemez!")
+
+    # Verileri güncelle
+    activity.activity_type = updated_data.get("activity_type", activity.activity_type)
+    activity.duration_minutes = updated_data.get("duration_minutes", activity.duration_minutes)
+    activity.description = updated_data.get("description", activity.description)
+    activity.course_id = updated_data.get("course_id", activity.course_id)
+
+    db.commit()
+    return {"message": "Aktivite başarıyla güncellendi."}
