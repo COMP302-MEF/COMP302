@@ -166,8 +166,8 @@ def update_activity(activity_id: int, updated_data: dict, db: Session = Depends(
         raise HTTPException(status_code=404, detail="Aktivite bulunamadı.")
     
     # Güvenlik Kontrolü: Sadece onay bekleyen (Pending) aktiviteler değiştirilebilir
-    if activity.status != "Pending":
-        raise HTTPException(status_code=400, detail="Onaylanmış veya reddedilmiş aktiviteler değiştirilemez!")
+    if activity.status.lower() != "pending":
+      raise HTTPException(status_code=400, detail="Onaylanmış veya reddedilmiş aktiviteler değiştirilemez!")
 
     # Verileri güncelle
     activity.activity_type = updated_data.get("activity_type", activity.activity_type)
@@ -177,3 +177,7 @@ def update_activity(activity_id: int, updated_data: dict, db: Session = Depends(
 
     db.commit()
     return {"message": "Aktivite başarıyla güncellendi."}
+
+@app.get("/users/{user_id}/activities")
+def get_user_activities(user_id: int, db: Session = Depends(get_db)):
+    return db.query(Activity).filter(Activity.user_id == user_id).all()

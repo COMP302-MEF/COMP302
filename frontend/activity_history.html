@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>InClass - Aktivite Geçmişim</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f7f6; margin: 0; }
+        nav { background-color: #27ae60; color: white; padding: 15px 30px; display: flex; justify-content: space-between; }
+        nav a { color: white; text-decoration: none; font-weight: bold; margin-left: 15px; }
+        .container { max-width: 800px; margin: 40px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
+        th { background-color: #ecf0f1; }
+        .status-pending { color: #f39c12; font-weight: bold; }
+        .status-approved { color: #27ae60; font-weight: bold; }
+        .btn-edit { background: #3498db; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+        .btn-edit:disabled { background: #bdc3c7; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div style="font-size: 20px; font-weight: bold;">📜 Aktivite Geçmişim</div>
+    <div>
+        <a href="leaderboard.html">Liderlik Tablosu</a>
+        <a href="add_activity.html">➕ Yeni Ekle</a>
+    </div>
+</nav>
+
+<div class="container">
+    <h2>Yaptığım Çalışmalar</h2>
+    <table id="history-table">
+        <thead>
+            <tr>
+                <th>Ders</th>
+                <th>Tür</th>
+                <th>Süre (Dk)</th>
+                <th>Durum</th>
+                <th>İşlem</th>
+            </tr>
+        </thead>
+        <tbody id="history-body">
+            </tbody>
+    </table>
+</div>
+
+<script>
+    const userId = localStorage.getItem('user_id') || "2"; // Test için 2 (Ali)
+
+    async function loadHistory() {
+        const response = await fetch(`http://127.0.0.1:8000/users/${userId}/activities`); // Not: Bu endpoint'in backend'de olması lazım
+        const activities = await response.json();
+        const tbody = document.getElementById('history-body');
+        tbody.innerHTML = '';
+
+        activities.forEach(act => {
+            const isPending = act.status && act.status.toLowerCase() === 'pending';
+            tbody.innerHTML += `
+                <tr>
+                    <td>${act.course_id}</td>
+                    <td>${act.activity_type}</td>
+                    <td>${act.duration_minutes}</td>
+                    <td class="status-${act.status.toLowerCase()}">${act.status}</td>
+                    <td>
+                        <button class="btn-edit" ${isPending ? '' : 'disabled'} onclick="editActivity(${act.id}, ${act.duration_minutes}, '${act.description}')">
+                            ${isPending ? 'Düzenle' : 'Kilitli'}
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    function editActivity(id, currentDuration, currentDesc) {
+        const newDuration = prompt("Yeni süreyi girin (Dakika):", currentDuration);
+        const newDesc = prompt("Yeni açıklamayı girin:", currentDesc);
+
+        if (newDuration) {
+            fetch(`http://127.0.0.1:8000/activities/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    duration_minutes: parseInt(newDuration),
+                    description: newDesc
+                })
+            }).then(res => {
+                if(res.ok) {
+                    alert("Güncellendi!");
+                    loadHistory();
+                } else {
+                    alert("Hata! Sadece bekleyen aktiviteler güncellenebilir.");
+                }
+            });
+        }
+    }
+
+    loadHistory();
+</script>
+</body>
+</html>
