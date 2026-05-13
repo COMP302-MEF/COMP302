@@ -229,3 +229,5 @@ def test_us1_activity_access_control_mocked():
         
         # The critical check for learning objective masking:
         assert "learning_objectives" not in result, "US-1 Violation: Objectives exposed!"
+
+        
