@@ -2,112 +2,89 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>InClass - Aktivite Geçmişim</title>
+    <title>InClass - Aktivite Geçmişi</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background-color: #f4f7f6; margin: 0; }
-        nav { background-color: #27ae60; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
-        nav a { color: white; text-decoration: none; font-weight: bold; margin-left: 15px; }
-        .container { max-width: 900px; margin: 40px auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; }
+        nav { background: #27ae60; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+        .nav-links a { color: white; text-decoration: none; margin-left: 15px; font-weight: bold; }
+        .container { max-width: 900px; margin: 30px auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; }
-        th { background-color: #f8f9fa; color: #666; }
-        .status-pending { color: #f39c12; font-weight: bold; text-transform: capitalize; }
-        .status-approved { color: #27ae60; font-weight: bold; text-transform: capitalize; }
-        .status-rejected { color: #e74c3c; font-weight: bold; text-transform: capitalize; }
-        .btn-edit { background: #3498db; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; transition: 0.3s; }
-        .btn-edit:hover { background: #2980b9; }
-        .btn-edit:disabled { background: #bdc3c7; cursor: not-allowed; opacity: 0.7; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #f8f9fa; color: #333; }
+        .status-badge { padding: 5px 10px; border-radius: 15px; font-size: 12px; font-weight: bold; }
+        .pending { background: #ffeaa7; color: #d35400; }
+        .approved { background: #55efc4; color: #00b894; }
+        .rejected { background: #fab1a0; color: #d63031; }
+        .btn-edit { background: #3498db; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
+        .btn-disabled { background: #bdc3c7; color: white; cursor: not-allowed; }
     </style>
 </head>
 <body>
+    <nav>
+        <div style="font-size: 20px; font-weight: bold;">📜 Aktivite Geçmişim</div>
+        <div class="nav-links">
+            <a href="add_activity.html">+ Yeni Ekle</a>
+            <a href="leaderboard.html">Liderlik Tablosu</a>
+            <button onclick="logout()" style="background:#c0392b; color:white; border:none; padding:8px 15px; margin-left:15px; cursor:pointer; border-radius:5px; font-weight:bold;">Çıkış Yap</button>
+        </div>
+    </nav>
 
-<nav>
-    <div style="font-size: 20px; font-weight: bold;">📜 Aktivite Geçmişim</div>
-    <div>
-        <a href="leaderboard.html">Liderlik Tablosu</a>
-        <a href="add_activity.html">➕ Yeni Ekle</a>
+    <div class="container">
+        <h2>Önceki Çalışmalarım</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Ders</th>
+                    <th>Tür</th>
+                    <th>Süre (Dk)</th>
+                    <th>Durum</th>
+                    <th>İşlem</th>
+                </tr>
+            </thead>
+            <tbody id="history-table">
+                </tbody>
+        </table>
     </div>
-</nav>
 
-<div class="container">
-    <h2>Yaptığım Çalışmalar</h2>
-    <table id="history-table">
-        <thead>
-            <tr>
-                <th>Ders</th>
-                <th>Aktivite Türü</th>
-                <th>Süre (Dk)</th>
-                <th>Açıklama</th>
-                <th>Durum</th>
-                <th>İşlem</th>
-            </tr>
-        </thead>
-        <tbody id="history-body">
-            </tbody>
-    </table>
-</div>
+    <script>
+        async function loadHistory() {
+            const userId = localStorage.getItem('user_id');
+            const res = await fetch(`http://127.0.0.1:8000/users/${userId}/activities`);
+            const data = await res.json();
+            const table = document.getElementById('history-table');
+            table.innerHTML = '';
 
-<script>
-    const userId = localStorage.getItem('user_id');
-
-    async function loadHistory() {
-        if (!userId) { window.location.href = 'login.html'; return; }
-        
-        try {
-            const response = await fetch(`http://127.0.0.1:8000/users/${userId}/activities`);
-            const activities = await response.json();
-            const tbody = document.getElementById('history-body');
-            tbody.innerHTML = '';
-
-            activities.reverse().forEach(act => {
-                // Büyük-küçük harf duyarsız kontrol (US-G Çözümü)
-                const isPending = act.status && act.status.toLowerCase() === 'pending';
-                
-                tbody.innerHTML += `
+            data.forEach(act => {
+                const isPending = act.status.toLowerCase() === 'pending';
+                table.innerHTML += `
                     <tr>
                         <td>${act.course_id}</td>
                         <td>${act.activity_type}</td>
-                        <td><strong>${act.duration_minutes}</strong></td>
-                        <td>${act.description || '-'}</td>
-                        <td class="status-${act.status.toLowerCase()}">${act.status}</td>
+                        <td>${act.duration_minutes} dk</td>
+                        <td><span class="status-badge ${act.status.toLowerCase()}">${act.status}</span></td>
                         <td>
-                            <button class="btn-edit" ${isPending ? '' : 'disabled'} 
-                                onclick="editActivity(${act.id}, ${act.duration_minutes}, '${act.description}')">
-                                ${isPending ? 'Düzenle' : 'Kilitli'}
-                            </button>
+                            ${isPending 
+                                ? `<button class="btn-edit" onclick="editAct(${act.id})">Düzenle</button>` 
+                                : `<button class="btn-edit btn-disabled" disabled>Kilitli</button>`}
                         </td>
                     </tr>
                 `;
             });
-        } catch (error) {
-            console.error("Geçmiş yüklenemedi:", error);
         }
-    }
 
-    async function editActivity(id, currentDuration, currentDesc) {
-        const newDuration = prompt("Yeni süreyi girin (Dakika):", currentDuration);
-        const newDesc = prompt("Yeni açıklamayı girin:", currentDesc);
-
-        if (newDuration !== null && newDesc !== null) {
-            const response = await fetch(`http://127.0.0.1:8000/activities/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    duration_minutes: parseInt(newDuration),
-                    description: newDesc
-                })
-            });
-
-            if (response.ok) {
-                alert("Başarıyla güncellendi!");
-                loadHistory();
-            } else {
-                alert("Hata! Sadece bekleyen aktiviteler güncellenebilir.");
+        function editAct(id) {
+            const newMinutes = prompt("Yeni süreyi girin (Dakika):");
+            if(newMinutes) {
+                fetch(`http://127.0.0.1:8000/activities/${id}`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ duration_minutes: parseInt(newMinutes) })
+                }).then(() => loadHistory());
             }
         }
-    }
 
-    loadHistory();
-</script>
+        function logout() { localStorage.clear(); window.location.href = 'login.html'; }
+        window.onload = loadHistory;
+    </script>
 </body>
 </html>

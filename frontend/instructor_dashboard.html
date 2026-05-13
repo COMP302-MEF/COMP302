@@ -59,6 +59,13 @@
             <tr><td colspan="5" style="text-align:center;">Veriler yükleniyor...</td></tr>
         </tbody>
     </table>
+   
+    <div class="container" style="margin-top: 20px;">
+    <h2>🛠️ Aktivite Kategorilerini Yönet (US-F)</h2>
+    <input type="text" id="new-type-name" placeholder="Kategori Adı (Örn: Bug Fixing)" style="width: 40%; padding: 8px;">
+    <input type="number" id="new-type-mult" placeholder="Katsayı (Örn: 1.5)" style="width: 20%; padding: 8px;">
+    <button class="btn btn-approve" onclick="addActivityType()">Ekle</button>
+    </div>
 
     <div class="danger-zone">
         <h3 style="color: #c0392b; margin: 0 0 10px 0;">⚠️ Tehlikeli Bölge</h3>
@@ -130,6 +137,18 @@
             }
         }
     }
+   
+    async function addActivityType() {
+    const name = document.getElementById('new-type-name').value;
+    const multiplier = document.getElementById('new-type-mult').value;
+    await fetch('http://127.0.0.1:8000/activity-types', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ name, multiplier })
+    });
+    alert("Yeni kategori eklendi! Artık öğrenciler bunu seçebilir.");
+    location.reload();
+}
 
     function logout() { localStorage.clear(); window.location.href = 'login.html'; }
 

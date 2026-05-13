@@ -3,6 +3,8 @@ from sqlalchemy import create_engine, Column, Integer, String, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from fastapi.middleware.cors import CORSMiddleware
+# Float ve Boolean gibi eksik olabilecek tipleri ekledik
+from sqlalchemy import create_engine, Column, Integer, String, Float, ForeignKey, Boolean
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./inclass.db"
 engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
@@ -87,3 +89,32 @@ def get_leaderboard(db: Session = Depends(get_db)):
 @app.delete("/reset-system")
 def reset(db: Session = Depends(get_db)):
     db.query(Activity).delete(); db.commit(); return {"msg": "OK"}
+
+# --- ENDPOINT'LER ---
+
+# --- YENİ MODEL: Aktivite Türleri (US-F) ---
+class ActivityType(Base):
+    __tablename__ = "activity_types"
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True) # Örn: 'Bug Fixing'
+    multiplier = Column(Float)         # Örn: 1.5
+
+Base.metadata.create_all(bind=engine)
+
+# Mevcut kategorileri listele (Öğrenci seçim kutusu için)
+@app.get("/activity-types")
+def get_types(db: Session = Depends(get_db)):
+    return db.query(ActivityType).all()
+
+# Yeni kategori ekle (Hoca paneli için)
+@app.post("/activity-types")
+def create_type(data: dict, db: Session = Depends(get_db)):
+    # Hata önleme: Aynı isimde kategori varsa ekleme
+    existing = db.query(ActivityType).filter(ActivityType.name == data['name']).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Bu kategori zaten var.")
+    
+    new_type = ActivityType(name=data['name'], multiplier=float(data['multiplier']))
+    db.add(new_type)
+    db.commit()
+    return {"msg": "Kategori başarıyla eklendi!"}

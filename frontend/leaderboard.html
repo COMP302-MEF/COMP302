@@ -4,73 +4,126 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>InClass - Liderlik Tablosu</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f7f6; margin: 0; }
-        nav { background-color: #27ae60; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
-        nav a { color: white; text-decoration: none; margin-left: 15px; font-weight: bold; }
-        .container { max-width: 600px; margin: 40px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .row { display: flex; justify-content: space-between; padding: 15px; border-bottom: 1px solid #eee; }
-        .row:nth-child(even) { background-color: #f9f9f9; }
-        .row:first-child { font-weight: bold; font-size: 18px; color: #f39c12; }
-        .btn-logout { background: #e74c3c; padding: 8px 15px; border-radius: 5px; }
-        .btn-add { background: #f39c12; padding: 8px 15px; border-radius: 5px; color: white; text-decoration: none; font-weight: bold; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f0f2f5; margin: 0; }
+        
+        /* Navigasyon Çubuğu */
+        nav { background-color: #27ae60; color: white; padding: 12px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .nav-links { display: flex; gap: 15px; align-items: center; }
+        .btn-nav { text-decoration: none; padding: 8px 15px; border-radius: 6px; font-weight: bold; font-size: 14px; transition: 0.3s; border: none; cursor: pointer; }
+        .btn-add { background: #f1c40f; color: #2c3e50; }
+        .btn-panel { background: #3498db; color: white; }
+        .btn-logout { background: #e74c3c; color: white; }
+        .btn-nav:hover { opacity: 0.8; transform: translateY(-1px); }
+
+        .container { max-width: 900px; margin: 30px auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        h1 { text-align: center; color: #2c3e50; margin-bottom: 25px; }
+        
+        .chart-container { background: #fafafa; padding: 20px; border-radius: 12px; margin-bottom: 30px; border: 1px solid #eee; }
+        
+        .student-row { display: flex; justify-content: space-between; align-items: center; padding: 15px; border-bottom: 1px solid #f1f1f1; }
+        .student-row:last-child { border-bottom: none; }
+        .rank-name { display: flex; align-items: center; gap: 15px; font-size: 18px; }
+        .rank-num { font-weight: bold; color: #27ae60; width: 25px; }
+        .score-val { font-weight: bold; color: #34495e; background: #ecf0f1; padding: 5px 12px; border-radius: 20px; }
     </style>
 </head>
 <body>
 
 <nav>
-    <div style="font-size: 20px; font-weight: bold;">🏆 InClass Liderlik Tablosu</div>
-    <div>
-        <span id="user-display" style="font-weight: bold; margin-right: 20px;"></span>
-        <a href="add_activity.html" class="btn-add">➕ Aktivite Ekle</a>
-        <a href="#" class="btn-logout" onclick="logout()">Çıkış Yap</a>
+    <div style="font-size: 20px; font-weight: bold;">🏆 InClass Liderlik</div>
+    <div class="nav-links">
+        <span id="user-display" style="font-size: 14px; margin-right: 10px; opacity: 0.9;"></span>
+        
+        <a href="add_activity.html" id="btn-student" class="btn-nav btn-add" style="display: none;">+ Aktivite Ekle</a>
+        <a href="instructor_dashboard.html" id="btn-instructor" class="btn-nav btn-panel" style="display: none;">👨‍🏫 Eğitmen Paneli</a>
+        
+        <button onclick="logout()" class="btn-nav btn-logout">Çıkış Yap</button>
     </div>
 </nav>
 
 <div class="container">
-    <h2>En Aktif Öğrenciler (Onaylı Puanlar)</h2>
-    <div id="leaderboard-list">
-        <div style="text-align: center; padding: 20px;">Veriler yükleniyor...</div>
+    <h1>En Aktif Öğrenciler (Onaylı Puanlar)</h1>
+
+    <div class="chart-container">
+        <canvas id="leaderboardChart"></canvas>
     </div>
+
+    <div id="leaderboard-list">
+        </div>
 </div>
 
 <script>
-    const userId = localStorage.getItem('user_id') || localStorage.getItem('id');
-    const userName = localStorage.getItem('user_name');
+    let myChart;
     const userRole = localStorage.getItem('user_role');
+    const userName = localStorage.getItem('user_name') || "Kullanıcı";
 
-    if (!userId || userRole !== 'student') {
-        alert("Erişim reddedildi. Lütfen öğrenci girişi yapın.");
-        window.location.href = 'login.html';
+    // 1. Role Göre Arayüzü Düzenle
+    document.getElementById('user-display').innerText = `${userName} (${userRole === 'student' ? 'Öğrenci' : 'Eğitmen'})`;
+    
+    if (userRole === 'student') {
+        document.getElementById('btn-student').style.display = 'block';
+    } else if (userRole === 'instructor') {
+        document.getElementById('btn-instructor').style.display = 'block';
     }
 
-    document.getElementById('user-display').innerText = "Öğrenci: " + userName;
-
-    async function loadLeaderboard() {
-        const listDiv = document.getElementById('leaderboard-list');
+    // 2. Verileri Backend'den Çek
+    async function updateLeaderboard() {
         try {
-            const response = await fetch('http://127.0.0.1:8000/leaderboard');
-            if (!response.ok) throw new Error("Veri çekilemedi");
+            const res = await fetch('http://127.0.0.1:8000/leaderboard');
+            const data = await res.json();
             
-            const data = await response.json();
-            listDiv.innerHTML = '';
-
-            if (data.length === 0) {
-                listDiv.innerHTML = '<div style="text-align:center;">Henüz onaylanmış aktivite yok.</div>';
-                return;
-            }
-
-            data.forEach((student, index) => {
-                let medal = index === 0 ? '🥇 ' : index === 1 ? '🥈 ' : index === 2 ? '🥉 ' : '👤 ';
-                listDiv.innerHTML += `
-                    <div class="row">
-                        <span>${medal} ${student.name}</span>
-                        <span style="font-weight:bold; color:#2980b9;">${student.score} Dk.</span>
-                    </div>`;
-            });
-        } catch (error) {
-            listDiv.innerHTML = `<div style="color:red; text-align:center;">Hata: ${error.message}</div>`;
+            renderList(data);
+            renderChart(data);
+        } catch (err) {
+            console.error("Veri hatası:", err);
         }
+    }
+
+    function renderList(data) {
+        const container = document.getElementById('leaderboard-list');
+        container.innerHTML = data.length ? '' : '<p style="text-align:center;">Henüz onaylanmış puan yok.</p>';
+        
+        data.forEach((s, i) => {
+            container.innerHTML += `
+                <div class="student-row">
+                    <div class="rank-name">
+                        <span class="rank-num">${i + 1}.</span>
+                        <span>${s.name}</span>
+                    </div>
+                    <span class="score-val">${s.score} Puan</span>
+                </div>
+            `;
+        });
+    }
+
+    function renderChart(data) {
+        const ctx = document.getElementById('leaderboardChart').getContext('2d');
+        if (myChart) myChart.destroy();
+
+        myChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.map(s => s.name),
+                datasets: [{
+                    label: 'Puanlar',
+                    data: data.map(s => s.score),
+                    backgroundColor: 'rgba(39, 174, 96, 0.6)',
+                    borderColor: '#27ae60',
+                    borderWidth: 2,
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: { 
+                    y: { beginAtZero: true, suggestedMax: 10 },
+                    x: { grid: { display: false } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
     }
 
     function logout() {
@@ -78,7 +131,7 @@
         window.location.href = 'login.html';
     }
 
-    loadLeaderboard();
+    updateLeaderboard();
 </script>
 
 </body>
