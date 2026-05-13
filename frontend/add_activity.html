@@ -2,43 +2,46 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>InClass - Aktivite Ekle</title>
+    <title>InClass - Aktivite Girişi</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; }
         nav { background: #27ae60; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
         .nav-links a { color: white; text-decoration: none; margin-left: 15px; font-weight: bold; }
-        .card { max-width: 500px; margin: 40px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-        input, select, textarea { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
-        .timer-box { background: #f9f9f9; padding: 20px; text-align: center; border-radius: 10px; border: 2px dashed #27ae60; margin-bottom: 15px; }
+        .card { max-width: 600px; margin: 30px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        label { font-weight: bold; display: block; margin-top: 15px; color: #34495e; }
+        input, select, textarea { width: 100%; padding: 12px; margin: 5px 0 15px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        .timer-box { background: #f9f9f9; padding: 20px; text-align: center; border-radius: 10px; border: 2px dashed #27ae60; }
         #timer-display { font-size: 32px; font-weight: bold; color: #2c3e50; margin-bottom: 15px; }
-        button { padding: 12px 20px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; transition: 0.3s; }
+        button { padding: 12px 25px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; transition: 0.3s; }
         .btn-start { background: #27ae60; color: white; }
         .btn-stop { background: #e74c3c; color: white; }
-        .btn-submit { background: #3498db; color: white; width: 100%; margin-top: 15px; }
+        .btn-submit { background: #3498db; color: white; width: 100%; margin-top: 20px; font-size: 16px; }
         .btn-logout { background: #c0392b; color: white; padding: 8px 15px; }
+        .tutoring-section { background: #ebf5fb; padding: 15px; border-radius: 8px; margin-top: 20px; border-left: 5px solid #3498db; }
     </style>
 </head>
 <body>
     <nav>
-        <div style="font-size: 20px; font-weight: bold;">📝 Aktivite Girişi</div>
+        <div style="font-size: 20px; font-weight: bold;">📝 InClass Aktivite Girişi</div>
         <div class="nav-links">
+            <span id="welcome-msg" style="margin-right:15px; font-style:italic; opacity:0.9;"></span>
             <a href="activity_history.html">Geçmişim</a>
-            <a href="leaderboard.html">Liderlik Tablosu</a>
+            <a href="leaderboard.html">Liderlik</a>
             <button onclick="logout()" class="btn-logout" style="margin-left:15px; cursor:pointer; border-radius:5px; border:none;">Çıkış Yap</button>
         </div>
     </nav>
 
     <div class="card">
-        <h2>🚀 Yeni Çalışma Başlat</h2>
-        <select id="course_id" required>
-            <option value="">-- Ders Seçin --</option>
+        <h2>⏱️ Çalışma Takibi</h2>
+        
+        <label>Ders Seçimi</label>
+        <select id="course_id">
             <option value="COMP302">COMP302 - Software Engineering</option>
             <option value="COMP201">COMP201 - Computer Architecture</option>
         </select>
 
-        <select id="type" required>
-            <option value="">-- Aktivite Türü Yükleniyor... --</option>
-        </select>
+        <label>Aktivite Türü</label>
+        <select id="type"><option>Yükleniyor...</option></select>
 
         <div class="timer-box">
             <div id="timer-display">00:00:00</div>
@@ -46,27 +49,34 @@
             <button class="btn-stop" id="stop-btn" onclick="stopTimer()" disabled>⏹ Durdur</button>
         </div>
 
-        <input type="number" id="duration" placeholder="Süre (Dakika)" readonly>
-        <textarea id="desc" placeholder="Neler yaptığınızı kısaca anlatın..."></textarea>
+        <input type="number" id="duration" placeholder="Süre (Otomatik)" readonly>
+
+        <div class="tutoring-section">
+            <label>💬 Ne Üzerine Çalıştınız?</label>
+            <textarea id="desc" rows="2" placeholder="Örn: Refactoring işlemleri yapıldı."></textarea>
+            
+            <label>🤔 Nerede Zorlandınız?</label>
+            <textarea id="challenges" rows="2" placeholder="Örn: SQL Join yapısında takıldım."></textarea>
+            
+            <label>💡 Ne Öğrendiniz?</label>
+            <textarea id="learned" rows="2" placeholder="Örn: FastAPI'de Dependency Injection mantığını anladım."></textarea>
+        </div>
+
         <button class="btn-submit" id="save-btn" onclick="save()" disabled style="opacity: 0.5;">Onaya Gönder</button>
     </div>
 
     <script>
         let seconds = 0, interval;
+        const userName = localStorage.getItem('user_name');
+        document.getElementById('welcome-msg').innerText = `Hoş geldin, ${userName}`;
 
-        // Sayfa açıldığında kategorileri backend'den çek (Dinamik Liste)
-        async function loadActivityTypes() {
-            try {
-                const res = await fetch('http://127.0.0.1:8000/activity-types');
-                const types = await res.json();
-                const typeSelect = document.getElementById('type');
-                typeSelect.innerHTML = '<option value="">-- Aktivite Türü Seçin --</option>';
-                types.forEach(t => {
-                    typeSelect.innerHTML += `<option value="${t.name}">${t.name} (x${t.multiplier})</option>`;
-                });
-            } catch (err) { console.error("Türler yüklenemedi"); }
+        async function loadTypes() {
+            const res = await fetch('http://127.0.0.1:8000/activity-types');
+            const types = await res.json();
+            const typeSelect = document.getElementById('type');
+            typeSelect.innerHTML = types.map(t => `<option value="${t.name}">${t.name} (x${t.multiplier})</option>`).join('');
         }
-        window.onload = loadActivityTypes;
+        window.onload = loadTypes;
 
         function startTimer() {
             interval = setInterval(() => { seconds++; updateDisplay(); }, 1000);
@@ -92,14 +102,15 @@
                 course_id: document.getElementById('course_id').value,
                 activity_type: document.getElementById('type').value,
                 duration_minutes: document.getElementById('duration').value,
-                description: document.getElementById('desc').value
+                description: document.getElementById('desc').value,
+                challenges: document.getElementById('challenges').value,
+                learned_points: document.getElementById('learned').value
             };
-            if(!data.course_id || !data.activity_type) return alert("Lütfen tüm alanları doldurun!");
             
             const res = await fetch('http://127.0.0.1:8000/activities', {
                 method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data)
             });
-            if(res.ok) { alert("Onaya gönderildi!"); window.location.href = "activity_history.html"; }
+            if(res.ok) { alert("Başarıyla onaya gönderildi!"); window.location.href = "activity_history.html"; }
         }
 
         function logout() { localStorage.clear(); window.location.href = 'login.html'; }
