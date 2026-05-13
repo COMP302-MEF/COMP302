@@ -7,15 +7,91 @@
 </head>
 <body>
 
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InClass - Liderlik Tablosu</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f7f6; margin: 0; }
+        nav { background-color: #27ae60; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+        nav a { color: white; text-decoration: none; margin-left: 15px; font-weight: bold; }
+        .container { max-width: 600px; margin: 40px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .row { display: flex; justify-content: space-between; padding: 15px; border-bottom: 1px solid #eee; }
+        .row:nth-child(even) { background-color: #f9f9f9; }
+        .row:first-child { font-weight: bold; font-size: 18px; color: #f39c12; }
+        .btn-logout { background: #e74c3c; padding: 8px 15px; border-radius: 5px; }
+        .btn-add { background: #f39c12; padding: 8px 15px; border-radius: 5px; color: white; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+
 <nav>
-    <div class="logo">🚀 InClass Gamification</div>
-    <div class="menu">
-        <span id="user-display"></span>
-        <a href="leaderboard.html">Liderlik Tablosu</a>
-        <a href="add_activity.html">Aktivite Ekle</a>
-        <a href="#" onclick="logout()">Çıkış Yap</a>
+    <div style="font-size: 20px; font-weight: bold;">🏆 InClass Liderlik Tablosu</div>
+    <div>
+        <span id="user-display" style="font-weight: bold; margin-right: 20px;"></span>
+        <a href="add_activity.html" class="btn-add">➕ Aktivite Ekle</a>
+        <a href="#" class="btn-logout" onclick="logout()">Çıkış Yap</a>
     </div>
 </nav>
+
+<div class="container">
+    <h2>En Aktif Öğrenciler (Onaylı Puanlar)</h2>
+    <div id="leaderboard-list">
+        <div style="text-align: center; padding: 20px;">Veriler yükleniyor...</div>
+    </div>
+</div>
+
+<script>
+    const userId = localStorage.getItem('user_id') || localStorage.getItem('id');
+    const userName = localStorage.getItem('user_name');
+    const userRole = localStorage.getItem('user_role');
+
+    if (!userId || userRole !== 'student') {
+        alert("Erişim reddedildi. Lütfen öğrenci girişi yapın.");
+        window.location.href = 'login.html';
+    }
+
+    document.getElementById('user-display').innerText = "Öğrenci: " + userName;
+
+    async function loadLeaderboard() {
+        const listDiv = document.getElementById('leaderboard-list');
+        try {
+            const response = await fetch('http://127.0.0.1:8000/leaderboard');
+            if (!response.ok) throw new Error("Veri çekilemedi");
+            
+            const data = await response.json();
+            listDiv.innerHTML = '';
+
+            if (data.length === 0) {
+                listDiv.innerHTML = '<div style="text-align:center;">Henüz onaylanmış aktivite yok.</div>';
+                return;
+            }
+
+            data.forEach((student, index) => {
+                let medal = index === 0 ? '🥇 ' : index === 1 ? '🥈 ' : index === 2 ? '🥉 ' : '👤 ';
+                listDiv.innerHTML += `
+                    <div class="row">
+                        <span>${medal} ${student.name}</span>
+                        <span style="font-weight:bold; color:#2980b9;">${student.score} Dk.</span>
+                    </div>`;
+            });
+        } catch (error) {
+            listDiv.innerHTML = `<div style="color:red; text-align:center;">Hata: ${error.message}</div>`;
+        }
+    }
+
+    function logout() {
+        localStorage.clear();
+        window.location.href = 'login.html';
+    }
+
+    loadLeaderboard();
+</script>
+
+</body>
+</html>
 
 <div class="container">
     <h2>🏆 Haftalık Liderlik Tablosu</h2>

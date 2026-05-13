@@ -1,176 +1,158 @@
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
-from database import get_db
+from sqlalchemy import func, case
+from fastapi.middleware.cors import CORSMiddleware
+from database import SessionLocal, engine
 import models
+from models import User, Course, Activity, Enrollment
 from pydantic import BaseModel
 from passlib.context import CryptContext
-from models import User, Course, Activity, Enrollment  # <-- Enrollment ekle
-from datetime import datetime # <-- Eğer kullanıyorsan ekle
+
+# Veritabanı tablolarını oluştur
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI()
-
-# CORS Ayarları: Frontend'in Backend'e erişebilmesi için şart
+# CORS AYARLARI (Frontend bağlantısı için şart)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Geliştirme aşamasında her şeye izin veriyoruz
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-# Pydantic Modeli (Frontend'den gelecek verinin kalıbı)
-class ActivityCreate(BaseModel):
-    user_id: int
-    course_id: int
-    activity_type: str
-    description: str
-    duration_minutes: int
 
-@app.get("/")
-def read_root():
-    return {"message": "InClass Gamification API is Running!"}
+# Şifreleme ayarı (Yeni bcrypt uyumlu)
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__truncate_error=True)
 
-# US-C: Kullanıcı Yetki Kontrolü
-@app.get("/user/verify/{email}")
-def verify_user_access(email: str, db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.email == email).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı")
-    return {
-        "full_name": user.full_name,
-        "role": user.role,
-        "is_instructor": user.role == "instructor"
-    }
-
-# US-B: Aktivite Ekleme
-@app.post("/activities/add")
-def add_activity(activity: ActivityCreate, db: Session = Depends(get_db)):
+def get_db():
+    db = SessionLocal()
     try:
-        new_act = models.Activity(
-            user_id=activity.user_id,
-            course_id=activity.course_id,
-            activity_type=activity.activity_type,
-            description=activity.description,
-            duration_minutes=activity.duration_minutes
-        )
-        db.add(new_act)
-        db.commit()
-        db.refresh(new_act)
-        return {"message": "Aktivite başarıyla kaydedildi!", "activity_id": new_act.id}
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=400, detail=str(e))
+        yield db
+    finally:
+        db.close()
 
-# US-B: Aktiviteleri Listeleme
-@app.get("/activities/user/{user_id}")
-def get_user_activities(user_id: int, db: Session = Depends(get_db)):
-    return db.query(models.Activity).filter(models.Activity.user_id == user_id).all()
-# US-L: Puan Hesaplama Fonksiyonu
-def calculate_score(activity_type: str, duration: int):
-    multipliers = {
-        "Coding": 2.0,
-        "Reading": 1.0,
-        "Meeting": 1.5,
-        "Other": 0.5
-    }
-    # Eğer listede olmayan bir tip girilirse 'Other' katsayısını kullan
-    multiplier = multipliers.get(activity_type, 0.5)
-    return int(duration * multiplier)
-
-# US-L: Liderlik Tablosu (Leaderboard) Endpoint'i
-@app.get("/leaderboard")
-def get_leaderboard(db: Session = Depends(get_db)):
-    # Kullanıcıları ve toplam puanlarını getir (Büyükten küçüğe sırala)
-    # Şimdilik basitlik adına aktivitelerden anlık hesaplayalım
-    users = db.query(models.User).all()
-    leaderboard = []
-    
-    for user in users:
-        # Bu kullanıcının tüm aktivitelerini bul
-        activities = db.query(models.Activity).filter(models.Activity.user_id == user.id).all()
-        # Aktiviteleri puanla ve topla
-        total_p = sum(calculate_score(a.activity_type, a.duration_minutes) for a in activities)
-        
-        leaderboard.append({
-            "full_name": user.full_name,
-            "total_score": total_p
-        })
-    
-    # Puanlara göre azalan sırada diz
-    return sorted(leaderboard, key=lambda x: x["total_score"], reverse=True)
-
-# Şifreleme ayarları
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-class UserCreate(BaseModel):
-    email: str
-    full_name: str
-    password: str
-    role: str
-
-# US-A: Kayıt Olma Endpoint'i
-@app.post("/register")
-def register_user(user: UserCreate, db: Session = Depends(get_db)):
-    # Email daha önce alınmış mı kontrol et
-    db_user = db.query(models.User).filter(models.User.email == user.email).first()
-    if db_user:
-        raise HTTPException(status_code=400, detail="Bu email zaten kayitli.")
-    
-    # Şifreyi hash'le ve kaydet
-    hashed_pw = pwd_context.hash(user.password)
-    new_user = models.User(
-        email=user.email,
-        full_name=user.full_name,
-        hashed_password=hashed_pw,
-        role=user.role
-    )
-    db.add(new_user)
-    db.commit()
-    return {"message": "Kullanici basariyla olusturuldu!"}
-
+# Pydantic Modelleri
 class LoginRequest(BaseModel):
     email: str
     password: str
 
-# US-A: Giriş Yapma Endpoint'i
+class ActivityCreate(BaseModel):
+    user_id: int
+    course_id: int
+    activity_type: str
+    duration_minutes: int
+    description: str
+
+# --- 1. GİRİŞ VE KULLANICI İŞLEMLERİ ---
+
 @app.post("/login")
 def login(request: LoginRequest, db: Session = Depends(get_db)):
-    # 1. Kullanıcıyı mail adresinden bul
-    user = db.query(models.User).filter(models.User.email == request.email).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı.")
+    user = db.query(User).filter(User.email == request.email).first()
+    if not user or not pwd_context.verify(request.password, user.password):
+        raise HTTPException(status_code=400, detail="E-posta veya şifre hatalı")
     
-    # 2. Şifreyi doğrula (Gelen şifre vs Hashlenmiş şifre)
-    if not pwd_context.verify(request.password, user.hashed_password):
-        raise HTTPException(status_code=400, detail="Hatalı şifre.")
-    
-    # 3. Başarılıysa kullanıcı bilgilerini dön
     return {
-        "message": "Giriş başarılı!",
-        "user_id": user.id,
+        "id": user.id,
         "full_name": user.full_name,
+        "email": user.email,
         "role": user.role
     }
 
-# Enrollment Şeması (Pydantic)
-class EnrollmentCreate(BaseModel):
-    user_id: int
-    course_id: int
+@app.get("/users/{user_id}/courses")
+def get_user_courses(user_id: int, db: Session = Depends(get_db)):
+    courses = db.query(Course).join(Enrollment).filter(Enrollment.user_id == user_id).all()
+    return courses
 
-@app.post("/enrollments/add")
-def enroll_student(enrollment: EnrollmentCreate, db: Session = Depends(get_db)):
-    # Daha önce kayıt olmuş mu kontrolü
-    db_enrollment = db.query(Enrollment).filter(
-        Enrollment.user_id == enrollment.user_id,
-        Enrollment.course_id == enrollment.course_id
-    ).first()
-    
-    if db_enrollment:
-        raise HTTPException(status_code=400, detail="Öğrenci bu derse zaten kayıtlı.")
 
-    new_enrollment = Enrollment(user_id=enrollment.user_id, course_id=enrollment.course_id)
-    db.add(new_enrollment)
+# --- 2. ÖĞRENCİ İŞLEMLERİ (AKTİVİTE VE LİDERLİK) ---
+
+@app.post("/activities/add")
+def add_activity(activity: ActivityCreate, db: Session = Depends(get_db)):
+    # Modeli oluştururken varsayılan olarak status="pending" (beklemede) atanacak
+    new_act = Activity(**activity.dict())
+    db.add(new_act)
     db.commit()
-    return {"message": "Derse kayıt başarıyla tamamlandı!"}
+    return {"message": "Aktivite başarıyla eklendi, onay bekliyor."}
+
+@app.get("/leaderboard")
+def get_leaderboard(db: Session = Depends(get_db)):
+    # Sadece ONAYLANMIŞ (approved) aktivitelerin dakikalarını topla
+    results = db.query(
+        User.full_name,
+        func.sum(Activity.duration_minutes).label("total_minutes")
+    ).join(Activity).filter(Activity.status == 'approved').group_by(User.id).order_by(func.sum(Activity.duration_minutes).desc()).all()
+    
+    return [{"name": r[0], "score": r[1]} for r in results]
+
+
+# --- 3. EĞİTMEN İŞLEMLERİ (DASHBOARD VE ONAYLAMA) ---
+
+@app.get("/instructor/{instructor_id}/dashboard")
+def get_instructor_dashboard(instructor_id: int, db: Session = Depends(get_db)):
+    courses = db.query(Course).filter(Course.instructor_id == instructor_id).all()
+    course_ids = [c.id for c in courses]
+
+    if not course_ids: return []
+
+    # Eğitmenin derslerindeki öğrencileri listele ve SADECE ONAYLI aktivitelerin katsayılı puanlarını topla
+    stats = db.query(
+        User.id,
+        User.full_name,
+        User.email,
+        func.coalesce(func.sum(
+            case(
+                (Activity.activity_type == 'Coding', Activity.duration_minutes * 2.0),
+                (Activity.activity_type == 'Meeting', Activity.duration_minutes * 1.5),
+                (Activity.activity_type == 'Reading', Activity.duration_minutes * 1.0),
+                else_=Activity.duration_minutes * 0.5
+            )
+        ), 0).label("total_score")
+    ).join(Enrollment, User.id == Enrollment.user_id)\
+     .outerjoin(Activity, (User.id == Activity.user_id) & (Activity.course_id == Enrollment.course_id) & (Activity.status == 'approved'))\
+     .filter(Enrollment.course_id.in_(course_ids))\
+     .group_by(User.id).all()
+
+    return [{"id": s.id, "name": s.full_name, "email": s.email, "score": s.total_score} for s in stats]
+
+@app.get("/instructor/{instructor_id}/pending_activities")
+def get_pending_activities(instructor_id: int, db: Session = Depends(get_db)):
+    # Eğitmenin derslerindeki onay bekleyen (pending) aktiviteleri getir
+    courses = db.query(Course).filter(Course.instructor_id == instructor_id).all()
+    course_ids = [c.id for c in courses]
+    
+    if not course_ids: return []
+
+    pending = db.query(Activity, User.full_name, Course.course_code)\
+                .join(User, Activity.user_id == User.id)\
+                .join(Course, Activity.course_id == Course.id)\
+                .filter(Activity.course_id.in_(course_ids), Activity.status == 'pending').all()
+    
+    return [
+        {
+            "activity_id": act.Activity.id,
+            "student_name": act.full_name,
+            "course": act.course_code,
+            "type": act.Activity.activity_type,
+            "duration": act.Activity.duration_minutes,
+            "description": act.Activity.description
+        } for act in pending
+    ]
+
+@app.post("/activities/{activity_id}/approve")
+def approve_activity(activity_id: int, db: Session = Depends(get_db)):
+    activity = db.query(Activity).filter(Activity.id == activity_id).first()
+    if activity:
+        activity.status = 'approved'
+        db.commit()
+        return {"message": "Aktivite onaylandı"}
+    raise HTTPException(status_code=404, detail="Aktivite bulunamadı")
+
+@app.post("/activities/{activity_id}/reject")
+def reject_activity(activity_id: int, db: Session = Depends(get_db)):
+    activity = db.query(Activity).filter(Activity.id == activity_id).first()
+    if activity:
+        activity.status = 'rejected'
+        db.commit()
+        return {"message": "Aktivite reddedildi"}
+    raise HTTPException(status_code=404, detail="Aktivite bulunamadı")
