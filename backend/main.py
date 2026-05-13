@@ -181,3 +181,15 @@ def update_activity(activity_id: int, updated_data: dict, db: Session = Depends(
 @app.get("/users/{user_id}/activities")
 def get_user_activities(user_id: int, db: Session = Depends(get_db)):
     return db.query(Activity).filter(Activity.user_id == user_id).all()
+
+# US-M: Tüm Aktiviteleri Sıfırlama (Yalnızca Eğitmen Yetkisiyle)
+@app.delete("/reset-system")
+def reset_system(db: Session = Depends(get_db)):
+    try:
+        # Tüm aktivite kayıtlarını siler
+        db.query(Activity).delete()
+        db.commit()
+        return {"message": "Sistem başarıyla sıfırlandı. Tüm puanlar silindi."}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
