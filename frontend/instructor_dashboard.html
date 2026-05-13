@@ -2,172 +2,143 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>InClass - Eğitmen Paneli</title>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f7f6; margin: 0; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #f0f2f5; margin: 0; }
         nav { background-color: #2c3e50; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
-        nav a { color: white; text-decoration: none; margin-left: 15px; font-weight: bold; }
-        .container { max-width: 1000px; margin: 40px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 40px;}
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; }
-        th { background-color: #ecf0f1; color: #333; }
-        .badge { background:#3498db; color:white; padding: 5px 10px; border-radius: 15px; font-size: 14px; font-weight: bold; }
-        .btn-logout { background: #e74c3c; padding: 8px 15px; border-radius: 5px; color: white; border: none; cursor: pointer; text-decoration: none;}
-        .btn-approve { background-color: #2ecc71; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-right: 5px;}
-        .btn-reject { background-color: #e74c3c; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;}
-        .btn-approve:hover { background-color: #27ae60; }
-        .btn-reject:hover { background-color: #c0392b; }
-        h2 { border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; color: #2c3e50; }
+        nav a { color: white; text-decoration: none; font-weight: bold; margin-left: 15px; }
+        .container { max-width: 1000px; margin: 30px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 15px; border-bottom: 1px solid #eee; text-align: left; }
+        th { background-color: #f8f9fa; font-size: 13px; color: #7f8c8d; text-transform: uppercase; }
+        .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-approve { background-color: #27ae60; color: white; margin-right: 5px; }
+        .btn-reject { background-color: #e74c3c; color: white; }
+        .btn-reset { background-color: #e67e22; color: white; width: 100%; margin-top: 15px; padding: 12px; }
+        .btn:hover { opacity: 0.85; }
+        .danger-zone { margin-top: 50px; padding: 20px; border: 2px dashed #e74c3c; border-radius: 10px; background: #fff5f5; }
     </style>
 </head>
 <body>
-
-<nav>
-    <div style="font-size: 20px; font-weight: bold;">👨‍🏫 Eğitmen Paneli</div>
-    <div>
-        <span id="user-display" style="color: #f1c40f; margin-right: 20px;"></span>
-        <a href="#" class="btn-logout" onclick="logout()">Çıkış Yap</a>
+    <nav style="background-color: #2c3e50; color: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.2);">
+    <div style="font-size: 22px; font-weight: bold; display: flex; align-items: center;">
+        <span style="margin-right: 10px;">👨‍🏫</span> InClass Eğitmen Paneli
+    </div>
+    <div style="display: flex; align-items: center; gap: 20px;">
+        <span id="instructor-name" style="font-style: italic; color: #bdc3c7;"></span>
+        <a href="leaderboard.html" style="color: white; text-decoration: none; font-weight: bold; border-bottom: 1px solid transparent;" onmouseover="this.style.borderBottom='1px solid white'" onmouseout="this.style.borderBottom='1px solid transparent'">Liderlik Tablosu</a>
+        <button onclick="logout()" style="background-color: #e74c3c; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: background 0.3s;">
+            🚪 Çıkış Yap
+        </button>
     </div>
 </nav>
 
-<div class="container" style="border-left: 5px solid #f39c12;">
-    <h2>⏳ Onay Bekleyen Aktiviteler</h2>
+<nav>
+    <div style="font-size: 22px; font-weight: bold;">👨‍🏫 InClass Eğitmen Kontrol Merkezi</div>
+    <div>
+        <span id="instructor-name" style="margin-right: 15px; opacity: 0.9;"></span>
+        <a href="leaderboard.html">Liderlik Tablosu</a>
+        <a href="#" onclick="logout()" style="color: #ff7675; margin-left: 20px; text-decoration: none; font-weight: bold;">Çıkış Yap</a>
+    </div>
+</nav>
+
+<div class="container">
+    <h2>⌛ Onay Bekleyen Aktiviteler</h2>
     <table id="pending-table">
         <thead>
             <tr>
-                <th>Öğrenci</th>
-                <th>Ders</th>
+                <th>Öğrenci ID</th>
                 <th>Tür</th>
-                <th>Süre</th>
+                <th>Süre (Dk)</th>
                 <th>Açıklama</th>
-                <th style="text-align: center;">İşlem</th>
+                <th>İşlemler</th>
             </tr>
         </thead>
-        <tbody>
-            <tr><td colspan="6" style="text-align: center;">Yükleniyor...</td></tr>
+        <tbody id="pending-body">
+            <tr><td colspan="5" style="text-align:center;">Veriler yükleniyor...</td></tr>
         </tbody>
     </table>
-</div>
 
-<div class="container" style="border-left: 5px solid #3498db;">
-    <h2>📊 Sınıf Listesi ve Performanslar</h2>
-    <table id="student-table">
-        <thead>
-            <tr>
-                <th>Öğrenci Adı</th>
-                <th>E-posta</th>
-                <th>Güncel Puan (Sadece Onaylılar)</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr><td colspan="3" style="text-align: center;">Yükleniyor...</td></tr>
-        </tbody>
-    </table>
+    <div class="danger-zone">
+        <h3 style="color: #c0392b; margin: 0 0 10px 0;">⚠️ Tehlikeli Bölge</h3>
+        <p style="color: #636e72; font-size: 14px;">Aşağıdaki buton veritabanındaki TÜM aktivite ve puan verilerini kalıcı olarak siler.</p>
+        <button class="btn btn-reset" onclick="resetSystem()">Sistemi Sıfırla (Tüm Verileri Sil)</button>
+    </div>
 </div>
 
 <script>
-    const userId = localStorage.getItem('user_id');
-    const userRole = localStorage.getItem('user_role');
-    const userName = localStorage.getItem('user_name');
+    const instructorName = localStorage.getItem('user_name');
 
-    if (!userId || userRole !== 'instructor') {
-        alert("Erişim reddedildi. Lütfen eğitmen girişi yapın.");
+    if (localStorage.getItem('user_role') !== 'instructor') {
         window.location.href = 'login.html';
     }
+    document.getElementById('instructor-name').innerText = instructorName;
 
-    document.getElementById('user-display').innerText = "Hoş geldin, " + userName;
-
-    // 1. ONAYLI PUANLARI ÇEK
-    async function loadStats() {
-        const tbody = document.querySelector('#student-table tbody');
-        try {
-            const response = await fetch(`http://127.0.0.1:8000/instructor/${userId}/dashboard`);
-            if (!response.ok) throw new Error("Veri çekilemedi.");
-            const stats = await response.json();
-            tbody.innerHTML = ''; 
-
-            if (stats.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" style="text-align: center;">Kayıtlı öğrenci bulunamadı.</td></tr>';
-                return;
-            }
-
-            stats.forEach(s => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td><strong>${s.name}</strong></td>
-                        <td>${s.email}</td>
-                        <td><span class="badge">${s.score.toFixed(1)} Puan</span></td>
-                    </tr>`;
-            });
-        } catch (error) {
-            tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: red;">Hata: ${error.message}</td></tr>`;
-        }
-    }
-
-    // 2. BEKLEYEN AKTİVİTELERİ ÇEK
     async function loadPendingActivities() {
-        const tbody = document.querySelector('#pending-table tbody');
         try {
-            const response = await fetch(`http://127.0.0.1:8000/instructor/${userId}/pending_activities`);
-            if (!response.ok) throw new Error("Veri çekilemedi.");
-            const pending = await response.json();
+            // Sadece Pending olanları getiren endpoint
+            const response = await fetch('http://127.0.0.1:8000/activities/pending');
+            const activities = await response.json();
+            const tbody = document.getElementById('pending-body');
             tbody.innerHTML = '';
 
-            if (pending.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #7f8c8d;">Şu an onay bekleyen aktivite yok.</td></tr>';
+            if (activities.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:30px; color:#95a5a6;">Onay bekleyen yeni bir çalışma bulunmuyor.</td></tr>';
                 return;
             }
 
-            pending.forEach(p => {
+            activities.forEach(act => {
                 tbody.innerHTML += `
                     <tr>
-                        <td><strong>${p.student_name}</strong></td>
-                        <td>${p.course}</td>
-                        <td>${p.type}</td>
-                        <td>${p.duration} Dk.</td>
-                        <td style="font-style: italic; color: #555;">"${p.description}"</td>
-                        <td style="text-align: center;">
-                            <button class="btn-approve" onclick="handleActivity(${p.activity_id}, 'approve')">✔ Onayla</button>
-                            <button class="btn-reject" onclick="handleActivity(${p.activity_id}, 'reject')">✖ Reddet</button>
+                        <td>#${act.user_id}</td>
+                        <td><strong>${act.activity_type}</strong></td>
+                        <td>${act.duration_minutes} Dk</td>
+                        <td>${act.description || '-'}</td>
+                        <td>
+                            <button class="btn btn-approve" onclick="updateStatus(${act.id}, 'Approved')">Onayla</button>
+                            <button class="btn btn-reject" onclick="updateStatus(${act.id}, 'Rejected')">Reddet</button>
                         </td>
-                    </tr>`;
+                    </tr>
+                `;
             });
         } catch (error) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: red;">Hata: ${error.message}</td></tr>`;
+            console.error("Liste yüklenemedi:", error);
         }
     }
 
-    // 3. ONAYLA VEYA REDDET BUTON İŞLEMİ
-    async function handleActivity(activityId, action) {
-        if (!confirm(`Bu aktiviteyi ${action === 'approve' ? 'onaylamak' : 'reddetmek'} istediğinize emin misiniz?`)) return;
+    async function updateStatus(id, status) {
+        // Backend'deki PUT /activities/{id}/status?status=... yapısı ile tam uyumlu
+        const response = await fetch(`http://127.0.0.1:8000/activities/${id}/status?status=${status}`, {
+            method: 'PUT'
+        });
 
-        try {
-            const response = await fetch(`http://127.0.0.1:8000/activities/${activityId}/${action}`, {
-                method: 'POST'
-            });
+        if (response.ok) {
 
+            loadPendingActivities(); // Başarılıysa listeyi tazele
+        } else {
+            alert("İşlem başarısız oldu. Lütfen tekrar deneyin.");
+        }
+    }
+
+    async function resetSystem() {
+        if (confirm("DİKKAT! Tüm veriler kalıcı olarak silinecektir. Emin misiniz?")) {
+            const response = await fetch('http://127.0.0.1:8000/reset-system', { method: 'DELETE' });
             if (response.ok) {
-                // İşlem başarılıysa tabloları yenile
+                alert("Veritabanı temizlendi!");
                 loadPendingActivities();
-                loadStats();
-            } else {
-                alert("Bir hata oluştu.");
             }
-        } catch (error) {
-            alert("Sunucuya ulaşılamadı.");
         }
     }
 
-    function logout() {
-        localStorage.clear();
-        window.location.href = 'login.html';
-    }
+    function logout() { localStorage.clear(); window.location.href = 'login.html'; }
 
-    // Sayfa açıldığında her iki tabloyu da doldur
-    loadStats();
     loadPendingActivities();
+    function logout() {
+    console.log("Çıkış yapılıyor..."); // Tarayıcı konsolunda (F12) çalıştığını görmek için
+    localStorage.clear(); // Tüm verileri temizle
+    window.location.replace('login.html'); // Geçmişi silerek yönlendir
+}
 </script>
-
 </body>
 </html>
