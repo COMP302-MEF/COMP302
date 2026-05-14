@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InClass - Giriş Yap</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .login-card { width: 100%; max-width: 410px; }
+        .demo-accounts { background: #f8faf9; border-radius: 10px; padding: 12px; font-size: 13px; text-align: left; margin-top: 14px; }
+    </style>
+</head>
+<body>
+    <div class="card login-card">
+        <h2 style="text-align:center;">InClass Platformu</h2>
+        <p style="text-align:center;">Lütfen giriş yapın</p>
+
+        <label>E-posta</label>
+        <input class="input" type="email" id="email" value="hoca_a@test.com" placeholder="E-posta Adresi">
+
+        <label>Şifre</label>
+        <input class="input" type="password" id="password" value="123" placeholder="Şifre">
+
+        <button class="btn btn-primary" style="width:100%;" onclick="login()">Giriş Yap</button>
+
+        <p style="text-align:center; margin-top:16px;">
+            Hesabın yok mu? <a href="register.html">Kayıt Ol</a>
+        </p>
+
+        <div class="demo-accounts">
+            <strong>Demo hesapları</strong><br>
+            Instructor A: hoca_a@test.com / 123<br>
+            Instructor B: hoca_b@test.com / 123<br>
+            Student 1: ogr_1@test.com / 123<br>
+            Student 2: ogr_2@test.com / 123
+        </div>
+    </div>
+
+    <script src="api.js"></script>
+    <script>
+        async function login() {
+            const email = document.getElementById("email").value.trim();
+            const password = document.getElementById("password").value.trim();
+
+            if (!email || !password) {
+                alert("E-posta ve şifre zorunludur.");
+                return;
+            }
+
+            try {
+                const data = await apiFetch("/login", {
+                    method: "POST",
+                    body: JSON.stringify({ email, password })
+                });
+
+                localStorage.setItem("token", data.token);
+                localStorage.setItem("userName", data.name);
+                localStorage.setItem("userRole", data.role);
+                localStorage.setItem("userEmail", data.email);
+
+                if (data.role === "instructor") {
+                    window.location.href = "instructor_dashboard.html";
+                } else if (data.role === "student") {
+                    window.location.href = "student_chat.html";
+                } else {
+                    alert("Bilinmeyen rol.");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Giriş başarısız: " + err.message);
+            }
+        }
+    </script>
+</body>
+</html>

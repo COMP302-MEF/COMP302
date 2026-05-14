@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InClass - Öğrenci Paneli</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        #chat-section { display: none; }
+        .activity-text-box {
+            background: #e8f4f8;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+        #chat-window {
+            height: 340px;
+            overflow-y: auto;
+            border: 1px solid #d9e2e1;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 12px;
+            background: #fafafa;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .message {
+            max-width: 82%;
+            padding: 10px 14px;
+            border-radius: 14px;
+            line-height: 1.45;
+        }
+        .msg-ai { background: #e0f7fa; align-self: flex-start; }
+        .msg-user { background: #3498db; color: white; align-self: flex-end; }
+        .msg-system { background: #f1c40f; color: #2c3e50; align-self: center; font-size: 13px; font-weight: 700; }
+        .input-area { display: flex; gap: 10px; }
+        .input-area input { flex: 1; }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div class="topbar-title" id="welcome-text">👨‍🎓 Öğrenci Paneli</div>
+        <button class="btn btn-danger" onclick="logout()">Çıkış Yap</button>
+    </div>
+
+    <div class="container">
+        <div class="card" id="activity-list-section">
+            <h3>Derslerimdeki Aktif Aktiviteler</h3>
+            <p class="small">Sadece kayıtlı olduğun derslerin ACTIVE aktiviteleri listelenir.</p>
+            <div id="activity-list">Yükleniyor...</div>
+        </div>
+
+        <div class="card" id="chat-section">
+            <button class="btn btn-muted" onclick="goBack()">Listeye Dön</button>
+            <h3 id="chat-title">Aktivite</h3>
+
+            <div class="activity-text-box" id="activity-text">Metin yükleniyor...</div>
+
+            <div class="row space-between">
+                <span class="small" id="score-label">Skor: 0</span>
+                <span class="small" id="complete-label"></span>
+            </div>
+
+            <div id="chat-window">
+                <div class="message msg-system">Yapay zeka eğitmeni ile sohbete başla.</div>
+            </div>
+
+            <div class="input-area">
+                <input class="input" type="text" id="user-input" placeholder="Cevabınızı buraya yazın..." onkeypress="if(event.key === 'Enter') sendMessage()">
+                <button class="btn btn-success" id="send-btn" onclick="sendMessage()">Gönder</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="api.js"></script>
+    <script>
+        let currentActivityId = null;
+
+        if (requireAuth("student")) {
+            document.getElementById("welcome-text").innerText = `👨‍🎓 Hoş Geldin, ${getUserName()}`;
+            loadActivities();
+        }
+
+        async function loadActivities() {
+            try {
+                const courses = await apiFetch("/courses");
+                let html = "";
+
+                for (const c of courses) {
+                    const activities = await apiFetch(`/courses/${c.id}/activities`);
+                    const activeActs = activities.filter(a => a.status === "ACTIVE");
+
+                    activeActs.forEach(act => {
+                        html += `
+                            <div class="activity-item">
+                                <div>
+                                    <strong>${escapeHtml(c.course_code)}</strong> - #${act.activity_no} ${escapeHtml(act.title)}<br>
+                                    <span class="badge badge-${act.status}">${act.status}</span>
+                                </div>
+                                <br>
+                                <button class="btn btn-primary" onclick="openChat(${act.id})">Aktiviteye Gir</button>
+                            </div>
+                        `;
+                    });
+                }
+
+                document.getElementById("activity-list").innerHTML = html || "Şu an erişilebilir ACTIVE aktivite yok.";
+            } catch (err) {
+                document.getElementById("activity-list").innerText = err.message;
+            }
+        }
+
+        async function openChat(activityId) {
+            currentActivityId = activityId;
+
+            try {
+                const act = await apiFetch(`/activities/${activityId}`);
+                document.getElementById("chat-title").innerText = act.title;
+                document.getElementById("activity-text").innerText = act.text;
+
+                document.getElementById("chat-window").innerHTML = `
+                    <div class="message msg-system">Yapay zeka eğitmeni ile sohbete başla. Activity text yukarıda gösterildi; objectives öğrenciye gösterilmez.</div>
+                `;
+
+                const progress = await apiFetch(`/activities/${activityId}/my-progress`);
+                updateProgressUI(progress);
+
+                document.getElementById("activity-list-section").style.display = "none";
+                document.getElementById("chat-section").style.display = "block";
+                document.getElementById("user-input").disabled = false;
+                document.getElementById("send-btn").disabled = false;
+            } catch (err) {
+                alert("Aktiviteye erişilemedi: " + err.message);
+            }
+        }
+
+        function updateProgressUI(progress) {
+            document.getElementById("score-label").innerText = `Skor: ${progress.current_score}`;
+            document.getElementById("complete-label").innerText = progress.is_complete ? "Tamamlandı" : "";
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById("user-input");
+            const sendBtn = document.getElementById("send-btn");
+            const text = input.value.trim();
+
+            if (!text || !currentActivityId) return;
+
+            addMessageToUI("user", text);
+            input.value = "";
+            input.disabled = true;
+            sendBtn.disabled = true;
+            sendBtn.innerText = "Düşünüyor...";
+
+            try {
+                const data = await apiFetch(`/activities/${currentActivityId}/chat`, {
+                    method: "POST",
+                    body: JSON.stringify({ message: text })
+                });
+
+                addMessageToUI("ai", data.reply || "(AI boş cevap döndürdü)");
+
+                if (data.score_delta > 0 && data.achieved_objective != null) {
+                    addMessageToUI("system", `🎉 +${data.score_delta} puan kazandın. Güncel skor: ${data.updated_score}`);
+                }
+
+                if (data.mini_lesson) {
+                    addMessageToUI("system", data.mini_lesson);
+                }
+
+                document.getElementById("score-label").innerText = `Skor: ${data.updated_score}`;
+
+                if (data.is_complete) {
+                    addMessageToUI("system", "🏆 Aktivite tamamlandı. Harika iş!");
+                    document.getElementById("complete-label").innerText = "Tamamlandı";
+                    input.disabled = true;
+                    sendBtn.disabled = true;
+                } else {
+                    input.disabled = false;
+                    sendBtn.disabled = false;
+                    input.focus();
+                }
+            } catch (err) {
+                addMessageToUI("system", "Hata: " + err.message);
+                input.disabled = false;
+                sendBtn.disabled = false;
+            }
+
+            sendBtn.innerText = "Gönder";
+        }
+
+        function addMessageToUI(sender, text) {
+            const chatWindow = document.getElementById("chat-window");
+            const msgDiv = document.createElement("div");
+            msgDiv.className = `message msg-${sender}`;
+            msgDiv.innerText = text ?? "";
+            chatWindow.appendChild(msgDiv);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        function goBack() {
+            document.getElementById("activity-list-section").style.display = "block";
+            document.getElementById("chat-section").style.display = "none";
+            loadActivities();
+        }
+    </script>
+</body>
+</html>

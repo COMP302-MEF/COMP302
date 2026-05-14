@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>InClass - Kayıt Ol</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #27ae60; }
+        .register-card { width: 100%; max-width: 410px; }
+    </style>
+</head>
+<body>
+    <div class="card register-card">
+        <h2 style="text-align:center;">Yeni Hesap Oluştur</h2>
+
+        <label>Ad Soyad</label>
+        <input class="input" type="text" id="name" placeholder="Ad Soyad">
+
+        <label>E-posta</label>
+        <input class="input" type="email" id="email" placeholder="E-posta">
+
+        <label>Şifre</label>
+        <input class="input" type="password" id="password" placeholder="Şifre">
+
+        <label>Rol</label>
+        <select class="input" id="role">
+            <option value="student">Öğrenci</option>
+            <option value="instructor">Eğitmen</option>
+        </select>
+
+        <button class="btn btn-success" style="width:100%;" onclick="register()">Kayıt Ol</button>
+
+        <p style="text-align:center; margin-top:16px;">
+            Zaten hesabınız var mı? <a href="login.html">Giriş Yap</a>
+        </p>
+    </div>
+
+    <script src="api.js"></script>
+    <script>
+        async function register() {
+            const data = {
+                name: document.getElementById("name").value.trim(),
+                email: document.getElementById("email").value.trim(),
+                password: document.getElementById("password").value.trim(),
+                role: document.getElementById("role").value
+            };
+
+            if (!data.name || !data.email || !data.password || !data.role) {
+                alert("Lütfen tüm alanları doldurun.");
+                return;
+            }
+
+            try {
+                const result = await apiFetch("/register", {
+                    method: "POST",
+                    body: JSON.stringify(data)
+                });
+
+                alert(result.msg || "Kayıt başarılı.");
+                window.location.href = "login.html";
+            } catch (err) {
+                console.error(err);
+                alert("Kayıt başarısız: " + err.message);
+            }
+        }
+    </script>
+</body>
+</html>
