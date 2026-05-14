@@ -1,14 +1,16 @@
-from fastapi import FastAPI, Depends, HTTPException
-from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Float
+from fastapi import FastAPI, Depends, HTTPException, Query
+from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from fastapi.middleware.cors import CORSMiddleware
+import datetime
+import requests
+import json
 
-# --- POSTGRESQL BAĞLANTI AYARI ---
-# Buradaki 'postgres', 'sifren' ve 'inclass_db' kısımlarını kendi pgAdmin bilgilerinle doldur!
+# --- VERİTABANI VE AYARLAR ---
 SQLALCHEMY_DATABASE_URL = "postgresql://postgres:1234@localhost:5432/inclass_db"
+OPENROUTER_API_KEY = "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"
 
-# PostgreSQL için connect_args gerekmez
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
@@ -21,25 +23,37 @@ class User(Base):
     name = Column(String)
     email = Column(String, unique=True)
     password = Column(String)
-    role = Column(String)
+    role = Column(String) # 'student' veya 'instructor'
 
-class ActivityType(Base):
-    __tablename__ = "activity_types"
+class Course(Base):
+    __tablename__ = "courses"
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True)
-    multiplier = Column(Float, default=1.0)
+    course_code = Column(String, unique=True)
+    instructor_id = Column(Integer, ForeignKey("users.id"))
+
+class Enrollment(Base):
+    __tablename__ = "enrollments"
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("users.id"))
+    course_id = Column(Integer, ForeignKey("courses.id"))
 
 class Activity(Base):
     __tablename__ = "activities"
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    course_id = Column(String)
-    activity_type = Column(String)
-    duration_minutes = Column(Integer)
-    description = Column(String)
-    challenges = Column(String, nullable=True)     # US-J
-    learned_points = Column(String, nullable=True) # US-J
-    status = Column(String, default="Pending")
+    course_id = Column(Integer, ForeignKey("courses.id"))
+    title = Column(String)
+    activity_text = Column(Text)
+    objectives = Column(Text)
+    status = Column(String, default="NOT_STARTED") # NOT_STARTED, ACTIVE, ENDED
+
+class ScoreLog(Base):
+    __tablename__ = "score_logs"
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("users.id"))
+    activity_id = Column(Integer, ForeignKey("activities.id"))
+    objective_index = Column(Integer)
+    score = Column(Integer, default=1)
+    timestamp = Column(String, default=lambda: datetime.datetime.now().isoformat())
 
 # Tabloları oluştur
 Base.metadata.create_all(bind=engine)
@@ -69,87 +83,98 @@ def login(data: dict, db: Session = Depends(get_db)):
 
 @app.post("/register")
 def register(data: dict, db: Session = Depends(get_db)):
-    existing_user = db.query(User).filter(User.email == data.get("email")).first()
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Bu e-posta adresi zaten kullanımda.")
-    new_user = User(
-        name=data.get("name"),
-        email=data.get("email"),
-        password=data.get("password"),
-        role=data.get("role")
-    )
-    db.add(new_user)
+    if db.query(User).filter(User.email == data.get("email")).first():
+        raise HTTPException(status_code=400, detail="E-posta kullanımda.")
+    new_user = User(name=data.get("name"), email=data.get("email"), password=data.get("password"), role=data.get("role"))
+    db.add(new_user); db.commit(); db.refresh(new_user)
+    return {"msg": "Kayıt başarılı!"}
+
+@app.get("/courses")
+def get_courses(user_id: int = Query(...), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user: raise HTTPException(status_code=404)
+    if user.role == "instructor":
+        return db.query(Course).filter(Course.instructor_id == user.id).all()
+    else:
+        enrolls = db.query(Enrollment).filter(Enrollment.student_id == user.id).all()
+        return db.query(Course).filter(Course.id.in_([e.course_id for e in enrolls])).all()
+
+@app.get("/courses/{course_id}/activities")
+def get_course_activities(course_id: int, user_id: int = Query(...), db: Session = Depends(get_db)):
+    return db.query(Activity).filter(Activity.course_id == course_id).all()
+
+@app.put("/activities/{activity_id}")
+def update_activity(activity_id: int, data: dict, user_id: int = Query(...), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if user.role != "instructor": raise HTTPException(status_code=403)
+    act = db.query(Activity).filter(Activity.id == activity_id).first()
+    if "status" in data: act.status = data["status"]
     db.commit()
-    db.refresh(new_user)
-    return {"msg": "Kayıt başarılı! Giriş yapabilirsiniz."}
+    return {"msg": "Güncellendi"}
 
-@app.get("/activity-types")
-def get_types(db: Session = Depends(get_db)):
-    return db.query(ActivityType).all()
+@app.get("/activities/{activity_id}")
+def get_activity(activity_id: int, user_id: int = Query(...), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == user_id).first()
+    act = db.query(Activity).filter(Activity.id == activity_id).first()
+    if user.role == "student":
+        if act.status != "ACTIVE": raise HTTPException(status_code=403, detail="Aktif değil")
+        return {"id": act.id, "title": act.title, "text": act.activity_text}
+    return act
 
-@app.post("/activity-types")
-def create_type(data: dict, db: Session = Depends(get_db)):
-    new_type = ActivityType(name=data['name'], multiplier=float(data['multiplier']))
-    db.add(new_type); db.commit()
-    return {"msg": "OK"}
+# --- YAPAY ZEKA VE PUANLAMA AKIŞI ---
+@app.post("/activities/{activity_id}/chat")
+def chat_with_tutor(activity_id: int, data: dict, user_id: int = Query(...), db: Session = Depends(get_db)):
+    act = db.query(Activity).filter(Activity.id == activity_id).first()
+    user_msg = data.get("message", "")
+    history = data.get("history", [])
 
-@app.post("/activities")
-def create_activity(data: dict, db: Session = Depends(get_db)):
-    new_act = Activity(
-        user_id=data.get("user_id"),
-        course_id=data.get("course_id"),
-        activity_type=data.get("activity_type"),
-        duration_minutes=data.get("duration_minutes"),
-        description=data.get("description"),
-        challenges=data.get("challenges"),
-        learned_points=data.get("learned_points"),
-        status="Pending"
-    )
-    db.add(new_act); db.commit(); return {"msg": "OK"}
+    system_prompt = f"""You are a university tutor. Activity: {act.activity_text}. Objectives: {act.objectives}.
+    RULES: 1. Ask ONE question. 2. No direct answers. 3. If objective met, give mini-lesson.
+    RESPONSE FORMAT (JSON ONLY): {{"tutor_response": "...", "achieved_objective_index": 1 or null, "is_complete": bool}}"""
 
-@app.get("/users/{user_id}/activities")
-def get_user_activities(user_id: int, db: Session = Depends(get_db)):
-    return db.query(Activity).filter(Activity.user_id == user_id).all()
+    messages = [{"role": "system", "content": system_prompt}]
+    messages.extend(history)
+    messages.append({"role": "user", "content": user_msg})
 
-@app.get("/activities/pending")
-def get_pending(db: Session = Depends(get_db)):
-    return db.query(Activity).filter(Activity.status == "Pending").all()
+    headers = {"Authorization": f"Bearer {OPENROUTER_API_KEY}", "Content-Type": "application/json"}
+    payload = {"model": "deepseek/deepseek-chat", "messages": messages, "response_format": {"type": "json_object"}}
 
-# Mevcut update_status endpoint'ini bu daha kapsamlı versiyonla değiştirebilirsin
-@app.put("/activities/{id}")
-def update_activity(id: int, data: dict, db: Session = Depends(get_db)):
-    act = db.query(Activity).filter(Activity.id == id).first()
-    if not act:
-        raise HTTPException(status_code=404, detail="Aktivite bulunamadı")
-    
-    # Sadece gönderilen alanları güncelle (Öğrenci süreyi değiştirirse burası çalışır)
-    if "duration_minutes" in data:
-        act.duration_minutes = int(data["duration_minutes"])
-    if "description" in data:
-        act.description = data["description"]
-    if "challenges" in data:
-        act.challenges = data["challenges"]
-    if "learned_points" in data:
-        act.learned_points = data["learned_points"]
-    if "status" in data:
-        act.status = data["status"]
+    try:
+        res = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload)
+        llm_json = json.loads(res.json()["choices"][0]["message"]["content"])
+        
+        obj_idx = llm_json.get("achieved_objective_index")
+        if obj_idx:
+            exists = db.query(ScoreLog).filter(ScoreLog.student_id==user_id, ScoreLog.activity_id==activity_id, ScoreLog.objective_index==obj_idx).first()
+            if not exists:
+                db.add(ScoreLog(student_id=user_id, activity_id=activity_id, objective_index=obj_idx)); db.commit()
+        
+        return {"reply": llm_json["tutor_response"], "is_complete": llm_json["is_complete"]}
+    except:
+        raise HTTPException(status_code=500, detail="AI Hatası")
 
-    db.commit()
-    return {"msg": "Güncelleme başarılı"}
-
-@app.get("/leaderboard")
-def get_leaderboard(db: Session = Depends(get_db)):
-    users = db.query(User).filter(User.role == "student").all()
-    types = {t.name: t.multiplier for t in db.query(ActivityType).all()}
-    res = []
-    for u in users:
-        acts = db.query(Activity).filter(Activity.user_id == u.id, Activity.status == "Approved").all()
-        score = sum(a.duration_minutes * types.get(a.activity_type, 1.0) for a in acts)
-        res.append({"name": u.name, "score": round(score, 1)})
-    return sorted(res, key=lambda x: x["score"], reverse=True)
-
-@app.delete("/reset-system")
-def reset(db: Session = Depends(get_db)):
-    db.query(Activity).delete()
-    db.commit()
-    return {"msg": "OK"}
+# --- DEMO KURULUMU ---
+@app.post("/setup-demo")
+def setup_demo(db: Session = Depends(get_db)):
+    try:
+        if db.query(User).filter(User.email == "hoca_a@test.com").first(): return {"msg": "Zaten yüklü"}
+        h_a = User(name="Instructor A", email="hoca_a@test.com", password="123", role="instructor")
+        h_b = User(name="Instructor B", email="hoca_b@test.com", password="123", role="instructor")
+        db.add_all([h_a, h_b]); db.commit(); db.refresh(h_a)
+        
+        s1 = User(name="Student 1", email="ogr_1@test.com", password="123", role="student")
+        s2 = User(name="Student 2", email="ogr_2@test.com", password="123", role="student")
+        db.add_all([s1, s2]); db.commit(); db.refresh(s1)
+        
+        c1 = Course(course_code="COMP 302", instructor_id=h_a.id)
+        c2 = Course(course_code="COMP 400", instructor_id=h_b.id)
+        db.add_all([c1, c2]); db.commit(); db.refresh(c1)
+        
+        db.add(Enrollment(student_id=s1.id, course_id=c1.id)); db.commit()
+        
+        txt = "A student studies by rereading... Another studies by active retrieval... Which is better?"
+        objs = "1. Active retrieval is better.\n2. Feedback corrects mistakes."
+        db.add(Activity(course_id=c1.id, title="Demo Act", activity_text=txt, objectives=objs)); db.commit()
+        return {"msg": "Demo hazır!"}
+    except Exception as e:
+        db.rollback(); raise HTTPException(status_code=500, detail=str(e))

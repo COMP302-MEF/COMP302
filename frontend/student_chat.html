@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InClass - Öğrenci Paneli</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding: 20px; margin: 0; }
+        .container { max-width: 800px; margin: auto; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; }
+        .btn-logout { background: #e74c3c; color: white; padding: 10px 15px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .btn-enter { background: #3498db; color: white; padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; }
+        
+        /* Chat Kısmı Stilleri */
+        #chat-section { display: none; }
+        .activity-text-box { background: #e8f4f8; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-style: italic; }
+        #chat-window { height: 300px; overflow-y: auto; border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: #fafafa; display: flex; flex-direction: column; gap: 10px; }
+        .message { max-width: 80%; padding: 10px 15px; border-radius: 15px; line-height: 1.4; }
+        .msg-ai { background: #e0f7fa; align-self: flex-start; border-bottom-left-radius: 2px; }
+        .msg-user { background: #3498db; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .msg-system { background: #f1c40f; align-self: center; font-size: 12px; font-weight: bold; text-align: center; border-radius: 8px; }
+        .input-area { display: flex; gap: 10px; }
+        .input-area input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 6px; }
+        .input-area button { padding: 12px 20px; background: #27ae60; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        
+        .activity-item { border-bottom: 1px solid #eee; padding: 15px 0; display: flex; justify-content: space-between; align-items: center; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="card header">
+        <h2 id="welcome-text">👨‍🎓 Öğrenci Paneli</h2>
+        <button class="btn-logout" onclick="logout()">Çıkış Yap</button>
+    </div>
+
+    <div class="card" id="activity-list-section">
+        <h3>📚 Derslerimdeki Aktif Aktiviteler</h3>
+        <div id="activity-list">Yükleniyor...</div>
+    </div>
+
+    <div class="card" id="chat-section">
+        <button onclick="goBack()" style="margin-bottom: 15px; cursor:pointer;">🔙 Listeye Dön</button>
+        <h3 id="chat-title">Aktivite</h3>
+        
+        <div class="activity-text-box" id="activity-text">
+            Metin yükleniyor...
+        </div>
+
+        <div id="chat-window">
+            <div class="message msg-system">Yapay Zeka Eğitmeni ile sohbete başla! (İlk mesajı göndermen yeterli)</div>
+        </div>
+
+        <div class="input-area">
+            <input type="text" id="user-input" placeholder="Cevabınızı buraya yazın..." onkeypress="if(event.key === 'Enter') sendMessage()">
+            <button id="send-btn" onclick="sendMessage()">Gönder</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const userId = localStorage.getItem('userId');
+    const userName = localStorage.getItem('userName');
+    const userRole = localStorage.getItem('userRole');
+    let currentActivityId = null;
+    let chatHistory = []; // AI'ın eski mesajları hatırlaması için
+
+    // Güvenlik: Sadece öğrenciler girebilir
+    if (!userId || userRole !== 'student') {
+        alert("Bu sayfayı görüntüleme yetkiniz yok!");
+        window.location.href = 'login.html';
+    }
+
+    document.getElementById('welcome-text').innerText = `👨‍🎓 Hoş Geldin, ${userName}`;
+
+    // 1. Öğrencinin Kurslarındaki Aktiviteleri Çek
+    async function loadActivities() {
+        try {
+            // Önce öğrencinin kurslarını al
+            const coursesRes = await fetch(`http://localhost:8000/courses?user_id=${userId}`);
+            const courses = await coursesRes.json();
+            
+            let html = '';
+            // Her kurs için aktiviteleri çek
+            for (let c of courses) {
+                const actRes = await fetch(`http://localhost:8000/courses/${c.id}/activities?user_id=${userId}`);
+                const activities = await actRes.json();
+                
+                // Sadece ACTIVE olanları göster
+                const activeActs = activities.filter(a => a.status === 'ACTIVE');
+                
+                activeActs.forEach(act => {
+                    html += `
+                        <div class="activity-item">
+                            <div><strong>${c.course_code}</strong> - ${act.title}</div>
+                            <button class="btn-enter" onclick="openChat(${act.id})">Derse Katıl 🚀</button>
+                        </div>
+                    `;
+                });
+            }
+            document.getElementById('activity-list').innerHTML = html || "Şu an aktif bir aktivite bulunmuyor.";
+        } catch (err) {
+            console.error(err);
+            document.getElementById('activity-list').innerHTML = "Bağlantı hatası.";
+        }
+    }
+
+    // 2. Chat Ekranını Aç
+    async function openChat(activityId) {
+        currentActivityId = activityId;
+        chatHistory = []; // Sohbeti sıfırla
+        document.getElementById('chat-window').innerHTML = '<div class="message msg-system">Yapay Zeka Eğitmeni ile sohbete başla! (İlk mesajı olarak "Hello" yazabilirsin)</div>';
+        
+        try {
+            // Aktivite detayını çek (Hedefler gizli gelir!)
+            const res = await fetch(`http://localhost:8000/activities/${activityId}?user_id=${userId}`);
+            const act = await res.json();
+            
+            document.getElementById('chat-title').innerText = act.title;
+            document.getElementById('activity-text').innerText = act.text;
+            
+            // Ekranları değiştir
+            document.getElementById('activity-list-section').style.display = 'none';
+            document.getElementById('chat-section').style.display = 'block';
+        } catch (err) {
+            alert("Aktiviteye erişilemedi.");
+        }
+    }
+
+    // 3. Yapay Zekaya Mesaj Gönder
+    async function sendMessage() {
+        const input = document.getElementById('user-input');
+        const text = input.value.trim();
+        if (!text) return;
+
+        // Kullanıcı mesajını ekrana bas
+        addMessageToUI('user', text);
+        input.value = '';
+        input.disabled = true;
+        document.getElementById('send-btn').innerText = 'Düşünüyor...';
+
+        try {
+            const res = await fetch(`http://localhost:8000/activities/${currentActivityId}/chat?user_id=${userId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: text, history: chatHistory })
+            });
+
+            const data = await res.json();
+            
+            // AI mesajını ekrana bas
+            addMessageToUI('ai', data.reply);
+
+            // Hedef başarıldıysa puan bilgisini göster!
+            if (data.achieved_objective !== null) {
+                addMessageToUI('system', `🎉 TEBRİKLER! Bir hedefi başardın ve +1 Puan kazandın!`);
+            }
+
+            // Aktivite bittiyse (is_complete: true)
+            if (data.is_complete) {
+                addMessageToUI('system', `🏆 AKTİVİTE TAMAMLANDI! Harika iş çıkardın.`);
+                document.getElementById('send-btn').disabled = true;
+            } else {
+                input.disabled = false;
+                input.focus();
+            }
+
+            // Konuşma geçmişini kaydet (AI'ın bağlamı koparmaması için)
+            chatHistory.push({ role: "user", content: text });
+            chatHistory.push({ role: "assistant", content: data.reply });
+
+        } catch (err) {
+            console.error(err);
+            addMessageToUI('system', "❌ Bağlantı koptu. Lütfen tekrar deneyin.");
+            input.disabled = false;
+        }
+        
+        document.getElementById('send-btn').innerText = 'Gönder';
+    }
+
+    // Arayüze Mesaj Ekleme Fonksiyonu
+    function addMessageToUI(sender, text) {
+        const chatWindow = document.getElementById('chat-window');
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `message msg-${sender}`;
+        msgDiv.innerText = text;
+        chatWindow.appendChild(msgDiv);
+        chatWindow.scrollTop = chatWindow.scrollHeight; // Otomatik aşağı kaydır
+    }
+
+    function goBack() {
+        document.getElementById('activity-list-section').style.display = 'block';
+        document.getElementById('chat-section').style.display = 'none';
+        loadActivities();
+    }
+
+    function logout() {
+        localStorage.clear();
+        window.location.href = 'login.html';
+    }
+
+    window.onload = loadActivities;
+</script>
+
+</body>
+</html>
