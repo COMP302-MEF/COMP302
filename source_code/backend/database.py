@@ -1,26 +1,30 @@
 import os
+from pathlib import Path
+
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.orm import sessionmaker, declarative_base
 
-load_dotenv()
 
-SQLALCHEMY_DATABASE_URL = (
-    os.getenv("SQLALCHEMY_DATABASE_URL")
-    or os.getenv("DATABASE_URL")
-)
+BASE_DIR = Path(__file__).resolve().parent
+load_dotenv(BASE_DIR / ".env")
+
+SQLALCHEMY_DATABASE_URL = os.getenv("SQLALCHEMY_DATABASE_URL")
 
 if not SQLALCHEMY_DATABASE_URL:
     raise RuntimeError(
-        "SQLALCHEMY_DATABASE_URL is missing. Create backend/.env and add your PostgreSQL URL."
+        "SQLALCHEMY_DATABASE_URL bulunamadı. "
+        "Lütfen backend/.env dosyasını kontrol et."
     )
 
-# Some providers use postgres://, SQLAlchemy expects postgresql://
-if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
-    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgres://", "postgresql://", 1)
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL, pool_pre_ping=True)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine
+)
+
 Base = declarative_base()
 
 
