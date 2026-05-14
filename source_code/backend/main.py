@@ -16,7 +16,11 @@ from sqlalchemy.orm import Session
 from database import Base, engine, get_db
 from models import Activity, Course, Enrollment, ScoreLog, StudentProgress, User
 
-load_dotenv()
+from pathlib import Path
+from dotenv import load_dotenv
+
+BASE_DIR = Path(__file__).resolve().parent
+load_dotenv(BASE_DIR / ".env")
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "deepseek/deepseek-chat")
