@@ -4,8 +4,12 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from fastapi.middleware.cors import CORSMiddleware
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./inclass.db"
-engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
+# --- POSTGRESQL BAĞLANTI AYARI ---
+# Buradaki 'postgres', 'sifren' ve 'inclass_db' kısımlarını kendi pgAdmin bilgilerinle doldur!
+SQLALCHEMY_DATABASE_URL = "postgresql://postgres:1234@localhost:5432/inclass_db"
+
+# PostgreSQL için connect_args gerekmez
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -17,7 +21,7 @@ class User(Base):
     name = Column(String)
     email = Column(String, unique=True)
     password = Column(String)
-    role = Column(String) # 'student' veya 'instructor'
+    role = Column(String)
 
 class ActivityType(Base):
     __tablename__ = "activity_types"
@@ -33,13 +37,21 @@ class Activity(Base):
     activity_type = Column(String)
     duration_minutes = Column(Integer)
     description = Column(String)
-    challenges = Column(String, nullable=True)     # US-J: Zorluklar
-    learned_points = Column(String, nullable=True) # US-J: Öğrenilenler
+    challenges = Column(String, nullable=True)     # US-J
+    learned_points = Column(String, nullable=True) # US-J
     status = Column(String, default="Pending")
 
+# Tabloları oluştur
 Base.metadata.create_all(bind=engine)
+
 app = FastAPI()
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def get_db():
     db = SessionLocal()
@@ -54,6 +66,22 @@ def login(data: dict, db: Session = Depends(get_db)):
     if not user or user.password != data.get("password"):
         raise HTTPException(status_code=401, detail="Hatalı giriş")
     return {"id": user.id, "name": user.name, "role": user.role}
+
+@app.post("/register")
+def register(data: dict, db: Session = Depends(get_db)):
+    existing_user = db.query(User).filter(User.email == data.get("email")).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Bu e-posta adresi zaten kullanımda.")
+    new_user = User(
+        name=data.get("name"),
+        email=data.get("email"),
+        password=data.get("password"),
+        role=data.get("role")
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return {"msg": "Kayıt başarılı! Giriş yapabilirsiniz."}
 
 @app.get("/activity-types")
 def get_types(db: Session = Depends(get_db)):
@@ -87,11 +115,27 @@ def get_user_activities(user_id: int, db: Session = Depends(get_db)):
 def get_pending(db: Session = Depends(get_db)):
     return db.query(Activity).filter(Activity.status == "Pending").all()
 
-@app.put("/activities/{id}/status")
-def update_status(id: int, status: str, db: Session = Depends(get_db)):
+# Mevcut update_status endpoint'ini bu daha kapsamlı versiyonla değiştirebilirsin
+@app.put("/activities/{id}")
+def update_activity(id: int, data: dict, db: Session = Depends(get_db)):
     act = db.query(Activity).filter(Activity.id == id).first()
-    if act: act.status = status; db.commit(); return {"msg": "OK"}
-    raise HTTPException(status_code=404)
+    if not act:
+        raise HTTPException(status_code=404, detail="Aktivite bulunamadı")
+    
+    # Sadece gönderilen alanları güncelle (Öğrenci süreyi değiştirirse burası çalışır)
+    if "duration_minutes" in data:
+        act.duration_minutes = int(data["duration_minutes"])
+    if "description" in data:
+        act.description = data["description"]
+    if "challenges" in data:
+        act.challenges = data["challenges"]
+    if "learned_points" in data:
+        act.learned_points = data["learned_points"]
+    if "status" in data:
+        act.status = data["status"]
+
+    db.commit()
+    return {"msg": "Güncelleme başarılı"}
 
 @app.get("/leaderboard")
 def get_leaderboard(db: Session = Depends(get_db)):
@@ -106,23 +150,6 @@ def get_leaderboard(db: Session = Depends(get_db)):
 
 @app.delete("/reset-system")
 def reset(db: Session = Depends(get_db)):
-    db.query(Activity).delete(); db.commit(); return {"msg": "OK"}
-    
-    
-# main.py içine ekle
-@app.post("/register")
-def register(data: dict, db: Session = Depends(get_db)):
-    # Email kontrolü: Daha önce bu email alınmış mı?
-    existing_user = db.query(User).filter(User.email == data.get("email")).first()
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Bu e-posta adresi zaten kullanımda.")
-    
-    new_user = User(
-        name=data.get("name"),
-        email=data.get("email"),
-        password=data.get("password"),
-        role=data.get("role") # 'student' veya 'instructor'
-    )
-    db.add(new_user)
+    db.query(Activity).delete()
     db.commit()
-    return {"msg": "Kayıt başarılı! Giriş yapabilirsiniz."}    
+    return {"msg": "OK"}

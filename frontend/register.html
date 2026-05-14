@@ -40,12 +40,15 @@
                 role: document.getElementById('role').value
             };
 
-            const res = await fetch('http://127.0.0.1:8000/register', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(data)
-            });
-
+         // register.html içindeki fetch kısmını böyle güncelle:
+const res = await fetch('http://127.0.0.1:8000/register', {
+    method: 'POST',
+    mode: 'cors', // Bunu eklemek tarayıcıya CORS isteği olduğunu açıkça söyler
+    headers: {
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(data)
+});
             const result = await res.json();
             if (res.ok) {
                 alert(result.msg);

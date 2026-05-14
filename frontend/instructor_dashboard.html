@@ -96,9 +96,26 @@
     }
 
     // 2. Durum Güncelle (Onay/Red)
+   // 2. Durum Güncelle (Onay/Red) - YENİ JSON FORMATI
     async function updateStatus(id, status) {
-        await fetch(`http://127.0.0.1:8000/activities/${id}/status?status=${status}`, { method: 'PUT' });
-        loadPending();
+        try {
+            const res = await fetch(`http://localhost:8000/activities/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ status: status }) // Yeni backend'in beklediği format
+            });
+
+            if (res.ok) {
+                loadPending(); // Tabloyu başarıyla yenile
+            } else {
+                alert("İşlem başarısız oldu.");
+            }
+        } catch (err) {
+            console.error("Hata:", err);
+            alert("Sunucuya bağlanılamadı.");
+        }
     }
 
     // 3. Yeni Kategori Ekle (US-F)

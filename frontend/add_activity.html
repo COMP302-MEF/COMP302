@@ -112,6 +112,30 @@
             });
             if(res.ok) { alert("Başarıyla onaya gönderildi!"); window.location.href = "activity_history.html"; }
         }
+        async function updateActivity(id) {
+    const newDuration = prompt("Yeni süreyi girin (dakika):");
+    if (!newDuration) return;
+
+    try {
+        const res = await fetch(`http://localhost:8000/activities/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                duration_minutes: newDuration,
+                status: "Pending" // Düzenleme yapınca tekrar onaya düşmesi için
+            })
+        });
+
+        if (res.ok) {
+            alert("Süre güncellendi, tekrar onay bekliyor.");
+            loadActivities(); // Tabloyu yenile
+        } else {
+            alert("Güncelleme başarısız oldu.");
+        }
+    } catch (err) {
+        console.error("Hata:", err);
+    }
+}
 
         function logout() { localStorage.clear(); window.location.href = 'login.html'; }
     </script>
