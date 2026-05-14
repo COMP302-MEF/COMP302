@@ -107,3 +107,22 @@ def get_leaderboard(db: Session = Depends(get_db)):
 @app.delete("/reset-system")
 def reset(db: Session = Depends(get_db)):
     db.query(Activity).delete(); db.commit(); return {"msg": "OK"}
+    
+    
+# main.py içine ekle
+@app.post("/register")
+def register(data: dict, db: Session = Depends(get_db)):
+    # Email kontrolü: Daha önce bu email alınmış mı?
+    existing_user = db.query(User).filter(User.email == data.get("email")).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Bu e-posta adresi zaten kullanımda.")
+    
+    new_user = User(
+        name=data.get("name"),
+        email=data.get("email"),
+        password=data.get("password"),
+        role=data.get("role") # 'student' veya 'instructor'
+    )
+    db.add(new_user)
+    db.commit()
+    return {"msg": "Kayıt başarılı! Giriş yapabilirsiniz."}    
