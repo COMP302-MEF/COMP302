@@ -118,3 +118,5 @@ def create_type(data: dict, db: Session = Depends(get_db)):
     db.add(new_type)
     db.commit()
     return {"msg": "Kategori başarıyla eklendi!"}
+
+class Activity(Base):
