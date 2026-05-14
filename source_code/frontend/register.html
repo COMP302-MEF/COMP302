@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>InClass - Kayıt</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="login-shell">
+    <div class="login-card">
+      <h2>Yeni Hesap Oluştur</h2>
+      <label>Ad Soyad</label>
+      <input id="name" placeholder="Ad Soyad" />
+      <label>E-posta</label>
+      <input id="email" type="email" placeholder="E-posta" />
+      <label>Şifre</label>
+      <input id="password" type="password" placeholder="Şifre" />
+      <label>Rol</label>
+      <select id="role">
+        <option value="student">Öğrenci</option>
+        <option value="instructor">Eğitmen</option>
+      </select>
+      <button class="btn-green" style="width:100%;" onclick="register()">Kayıt Ol</button>
+      <p class="small" style="text-align:center;"><a href="login.html">Giriş sayfasına dön</a></p>
+      <div id="msg"></div>
+    </div>
+  </div>
+
+  <script src="api.js"></script>
+  <script>
+    async function register() {
+      const msg = document.getElementById('msg');
+      msg.innerHTML = '';
+      try {
+        const res = await fetch(`${API_BASE}/register`, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            name: document.getElementById('name').value.trim(),
+            email: document.getElementById('email').value.trim(),
+            password: document.getElementById('password').value,
+            role: document.getElementById('role').value
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Kayıt başarısız.');
+        msg.innerHTML = `<div class="success">${data.msg}</div>`;
+        setTimeout(() => window.location.href = 'login.html', 900);
+      } catch (err) {
+        msg.innerHTML = `<div class="error">${err.message}</div>`;
+      }
+    }
+  </script>
+</body>
+</html>

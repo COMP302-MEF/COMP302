@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>InClass - Hoca Paneli</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<nav>
+  <div class="brand">👨‍🏫 Hoca Paneli</div>
+  <div>
+    <span id="who"></span>
+    <button class="btn-red" onclick="logout()">Çıkış Yap</button>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="card">
+    <h3>Atandığım Dersler</h3>
+    <p class="small">Backend sadece giriş yapan hocanın yetkili olduğu dersleri döndürür.</p>
+    <div id="course-list" class="row">Yükleniyor...</div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>Aktiviteler</h3>
+      <div id="activity-list">Ders seçiniz.</div>
+    </div>
+
+    <div class="card">
+      <h3>Aktivite Oluştur / Güncelle</h3>
+      <input type="hidden" id="editActivityId" />
+      <label>Activity No</label>
+      <input type="number" id="activityNo" value="3" />
+      <label>Başlık</label>
+      <input id="activityTitle" placeholder="Örn: Retrieval Practice" />
+      <label>Aktivite Metni</label>
+      <textarea id="activityText" placeholder="Öğrenciye gösterilecek metin"></textarea>
+      <label>Learning Objectives - her satır bir objective</label>
+      <textarea id="activityObjectives" placeholder="1. Objective...&#10;2. Objective..."></textarea>
+      <div class="row">
+        <button class="btn-green" onclick="saveActivity()">Kaydet</button>
+        <button class="btn-gray" onclick="clearActivityForm()">Temizle</button>
+      </div>
+      <div id="form-msg"></div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>Manual Grade</h3>
+      <p class="small">Sadece bu derse kayıtlı öğrenciler listelenir. ENDED aktiviteye yeni score log eklenmez.</p>
+      <label>Öğrenci</label>
+      <select id="studentSelect"></select>
+      <label>Puan değişimi</label>
+      <input type="number" id="manualDelta" value="1" />
+      <label>Sebep</label>
+      <input id="manualReason" value="Instructor manual adjustment" />
+      <button class="btn-yellow" onclick="manualGrade()">Manual Grade Kaydet</button>
+      <div id="manual-msg"></div>
+    </div>
+
+    <div class="card">
+      <h3>Score Logs</h3>
+      <button onclick="loadLogs()">Seçili Aktivitenin Loglarını Göster</button>
+      <div id="logs">Aktivite seçiniz.</div>
+    </div>
+  </div>
+</div>
+
+<script src="api.js"></script>
+<script>
+requireRole('instructor');
+
+document.getElementById('who').innerText = `${localStorage.getItem('userName')} (${localStorage.getItem('userRole')})`;
+let selectedCourseId = null;
+let selectedActivityId = null;
+let currentActivities = [];
+
+async function loadCourses() {
+  const box = document.getElementById('course-list');
+  try {
+    const courses = await apiFetch('/courses');
+    if (!courses.length) {
+      box.innerHTML = 'Atanmış ders bulunamadı.';
+      return;
+    }
+    box.innerHTML = courses.map(c => `<button onclick="selectCourse(${c.id})">${c.course_code} - ${c.course_name}</button>`).join('');
+    selectCourse(courses[0].id);
+  } catch (err) {
+    box.innerHTML = `<div class="error">${err.message}</div>`;
+  }
+}
+
+async function selectCourse(courseId) {
+  selectedCourseId = courseId;
+  selectedActivityId = null;
+  clearActivityForm(false);
+  await Promise.all([loadActivities(), loadStudents()]);
+}
+
+async function loadStudents() {
+  const select = document.getElementById('studentSelect');
+  if (!selectedCourseId) return;
+  try {
+    const students = await apiFetch(`/courses/${selectedCourseId}/students`);
+    select.innerHTML = students.map(s => `<option value="${s.id}">${s.name} (${s.email})</option>`).join('') || '<option>Bu derse kayıtlı öğrenci yok</option>';
+  } catch (err) {
+    select.innerHTML = `<option>${err.message}</option>`;
+  }
+}
+
+async function loadActivities() {
+  const box = document.getElementById('activity-list');
+  box.innerHTML = 'Yükleniyor...';
+  try {
+    currentActivities = await apiFetch(`/courses/${selectedCourseId}/activities`);
+    if (!currentActivities.length) {
+      box.innerHTML = 'Bu derste aktivite yok.';
+      return;
+    }
+    box.innerHTML = currentActivities.map(a => `
+      <div class="item">
+        <div class="row" style="justify-content:space-between;">
+          <div>
+            <strong>#${a.activity_no} - ${a.title}</strong><br>
+            <span class="badge badge-${a.status}">${a.status}</span>
+          </div>
+          <button onclick="selectActivity(${a.id})">Seç</button>
+        </div>
+        <p class="small">${a.activity_text}</p>
+        <div class="row">
+          <button class="btn-green" onclick="startActivity(${a.id})">Başlat</button>
+          <button class="btn-red" onclick="endActivity(${a.id})">Bitir</button>
+          <button class="btn-yellow" onclick="resetActivity(${a.id})">Reset</button>
+          <button class="btn-gray" onclick="editActivity(${a.id})">Düzenle</button>
+        </div>
+      </div>
+    `).join('');
+  } catch (err) {
+    box.innerHTML = `<div class="error">${err.message}</div>`;
+  }
+}
+
+function selectActivity(id) {
+  selectedActivityId = id;
+  document.getElementById('logs').innerHTML = `<div class="success">Aktivite ${id} seçildi. Logları görmek için butona bas.</div>`;
+}
+
+function editActivity(id) {
+  const a = currentActivities.find(x => x.id === id);
+  if (!a) return;
+  selectedActivityId = id;
+  document.getElementById('editActivityId').value = a.id;
+  document.getElementById('activityNo').value = a.activity_no;
+  document.getElementById('activityTitle').value = a.title;
+  document.getElementById('activityText').value = a.activity_text;
+  document.getElementById('activityObjectives').value = (a.objectives || []).join('\n');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function clearActivityForm(resetSelected = true) {
+  if (resetSelected) selectedActivityId = null;
+  document.getElementById('editActivityId').value = '';
+  document.getElementById('activityNo').value = '3';
+  document.getElementById('activityTitle').value = '';
+  document.getElementById('activityText').value = '';
+  document.getElementById('activityObjectives').value = '';
+  document.getElementById('form-msg').innerHTML = '';
+}
+
+function formPayload() {
+  const objectives = document.getElementById('activityObjectives').value.split('\n').map(x => x.trim()).filter(Boolean);
+  return {
+    activity_no: parseInt(document.getElementById('activityNo').value),
+    title: document.getElementById('activityTitle').value.trim(),
+    activity_text: document.getElementById('activityText').value.trim(),
+    objectives
+  };
+}
+
+async function saveActivity() {
+  const msg = document.getElementById('form-msg');
+  msg.innerHTML = '';
+  try {
+    const editId = document.getElementById('editActivityId').value;
+    const payload = formPayload();
+    if (editId) {
+      await apiFetch(`/activities/${editId}`, { method: 'PUT', body: JSON.stringify(payload) });
+      msg.innerHTML = '<div class="success">Aktivite güncellendi.</div>';
+    } else {
+      await apiFetch(`/courses/${selectedCourseId}/activities`, { method: 'POST', body: JSON.stringify(payload) });
+      msg.innerHTML = '<div class="success">Aktivite oluşturuldu.</div>';
+    }
+    clearActivityForm(false);
+    loadActivities();
+  } catch (err) {
+    msg.innerHTML = `<div class="error">${err.message}</div>`;
+  }
+}
+
+async function startActivity(id) {
+  try { await apiFetch(`/activities/${id}/start`, { method: 'POST' }); await loadActivities(); }
+  catch (err) { alert(err.message); }
+}
+async function endActivity(id) {
+  try { await apiFetch(`/activities/${id}/end`, { method: 'POST' }); await loadActivities(); }
+  catch (err) { alert(err.message); }
+}
+async function resetActivity(id) {
+  if (!confirm('Bu aktivitenin tüm score/progress kayıtları silinecek ve status ENDED olacak. Emin misin?')) return;
+  try { await apiFetch(`/activities/${id}/reset`, { method: 'POST' }); await loadActivities(); await loadLogs(); }
+  catch (err) { alert(err.message); }
+}
+
+async function manualGrade() {
+  const msg = document.getElementById('manual-msg');
+  msg.innerHTML = '';
+  if (!selectedActivityId) { msg.innerHTML = '<div class="error">Önce aktivite seç.</div>'; return; }
+  try {
+    const data = await apiFetch(`/activities/${selectedActivityId}/manual-grade`, {
+      method: 'POST',
+      body: JSON.stringify({
+        student_id: parseInt(document.getElementById('studentSelect').value),
+        score_delta: parseInt(document.getElementById('manualDelta').value),
+        reason: document.getElementById('manualReason').value
+      })
+    });
+    msg.innerHTML = `<div class="success">Manual grade kaydedildi. Yeni skor: ${data.updated_score}</div>`;
+    loadLogs();
+  } catch (err) {
+    msg.innerHTML = `<div class="error">${err.message}</div>`;
+  }
+}
+
+async function loadLogs() {
+  const box = document.getElementById('logs');
+  if (!selectedActivityId) { box.innerHTML = 'Aktivite seçiniz.'; return; }
+  try {
+    const logs = await apiFetch(`/activities/${selectedActivityId}/score-logs`);
+    if (!logs.length) { box.innerHTML = 'Henüz score log yok.'; return; }
+    box.innerHTML = `<table class="table"><thead><tr><th>Student</th><th>Event</th><th>Obj</th><th>Δ</th><th>Total</th><th>Metadata</th></tr></thead><tbody>${logs.map(l => `
+      <tr>
+        <td>${l.student_name}</td>
+        <td>${l.event_type}</td>
+        <td>${l.objective_index ?? '-'}</td>
+        <td>${l.score_delta}</td>
+        <td>${l.total_score_after}</td>
+        <td><pre>${JSON.stringify(l.metadata, null, 2)}</pre></td>
+      </tr>
+    `).join('')}</tbody></table>`;
+  } catch (err) {
+    box.innerHTML = `<div class="error">${err.message}</div>`;
+  }
+}
+
+loadCourses();
+</script>
+</body>
+</html>
