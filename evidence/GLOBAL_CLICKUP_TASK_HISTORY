@@ -1,0 +1,13 @@
+task_id,task_name,change_type,from_state,to_state,changed_by
+S1-T01,Create frontend login page,status,To Do,In Progress,Demir Çalışır
+S1-T01,Create frontend login page,status,In Progress,Done,Berke Karakuş
+S1-T09,Configure PostgreSQL database connection,status,To Do,In Progress,Efe Günay
+S1-T09,Configure PostgreSQL database connection,status,In Progress,Done,Demir Çalışır
+S2-T01,Add token-based authentication to backend,status,To Do,In Progress,Demir Çalışır
+S2-T01,Add token-based authentication to backend,status,In Progress,Done,Berke Karakuş
+S2-T13,Implement AI tutor chat endpoint,status,To Do,In Progress,Kıvanç Akay
+S2-T13,Implement AI tutor chat endpoint,status,In Progress,Done,Efe Günay
+S2-T18,Implement score logs with metadata,status,To Do,In Progress,Efe Günay
+S2-T18,Implement score logs with metadata,status,In Progress,Done,Demir Çalışır
+S2-T28,Fix OpenRouter API key configuration,status,To Do,Done,Demir Çalışır
+S2-T29,Restore missing frontend files,status,To Do,Done,Berke Karakuş

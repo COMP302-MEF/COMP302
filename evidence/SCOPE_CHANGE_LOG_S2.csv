@@ -1,0 +1,35 @@
+sprint,item_id,change_type,from_state,to_state,reason,impact_on_sprint_goal,decision_owner,github_link
+Sprint 2,S2-T01,status,To Do,In Progress,Token authentication work started,Supports protected backend requests,Demir Çalışır,https://github.com/COMP302-MEF/COMP302/commit/95dcd0b
+Sprint 2,S2-T01,status,In Progress,Done,Token authentication completed,Supports server-side identity verification,Berke Karakuş,https://github.com/COMP302-MEF/COMP302/commit/95dcd0b
+Sprint 2,S2-T02,status,To Do,In Progress,Protected frontend request handling started,Supports frontend backend integration,El Celil Erden,https://github.com/COMP302-MEF/COMP302/commit/3c87501
+Sprint 2,S2-T02,status,In Progress,Done,Frontend token requests completed,Supports protected API usage,Kıvanç Akay,https://github.com/COMP302-MEF/COMP302/commit/3c87501
+Sprint 2,S2-T03,status,To Do,In Progress,Role authorization implementation started,Supports secure instructor and student behavior,Efe Günay,https://github.com/COMP302-MEF/COMP302/commit/95dcd0b
+Sprint 2,S2-T03,status,In Progress,Done,Role authorization completed,Supports Sprint 2 authorization goal,Demir Çalışır,https://github.com/COMP302-MEF/COMP302/commit/95dcd0b
+Sprint 2,S2-T04,status,To Do,In Progress,Course authorization implementation started,Prevents unauthorized course access,Berke Karakuş,https://github.com/COMP302-MEF/COMP302/commit/95dcd0b
+Sprint 2,S2-T04,status,In Progress,Done,Course authorization completed,Supports instructor and student access control,El Celil Erden,https://github.com/COMP302-MEF/COMP302/commit/95dcd0b
+Sprint 2,S2-T05,status,To Do,In Progress,Activity create endpoint started,Supports instructor activity management,Kıvanç Akay,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+Sprint 2,S2-T05,status,In Progress,Done,Activity create endpoint completed,Supports required instructor create behavior,Efe Günay,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+Sprint 2,S2-T07,status,To Do,In Progress,Activity update endpoint started,Supports instructor revision behavior,Demir Çalışır,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+Sprint 2,S2-T07,status,In Progress,Done,Activity update endpoint completed,Supports required update behavior,Berke Karakuş,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+Sprint 2,S2-T09,status,To Do,In Progress,Activity start behavior started,Supports class timing control,El Celil Erden,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+Sprint 2,S2-T09,status,In Progress,Done,Activity start behavior completed,Allows students to access ACTIVE activities,Kıvanç Akay,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+Sprint 2,S2-T10,status,To Do,In Progress,Activity end behavior started,Blocks student work after activity end,Efe Günay,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+Sprint 2,S2-T10,status,In Progress,Done,Activity end behavior completed,Supports ENDED activity rule,Demir Çalışır,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+Sprint 2,S2-T11,status,To Do,In Progress,Student enrolled course access check started,Prevents unauthorized student access,Berke Karakuş,https://github.com/COMP302-MEF/COMP302/commit/95dcd0b
+Sprint 2,S2-T11,status,In Progress,Done,Student enrollment check completed,Supports student authorization,El Celil Erden,https://github.com/COMP302-MEF/COMP302/commit/95dcd0b
+Sprint 2,S2-T13,status,To Do,In Progress,AI tutor endpoint started,Supports tutoring flow,Kıvanç Akay,https://github.com/COMP302-MEF/COMP302/commit/95dcd0b
+Sprint 2,S2-T13,status,In Progress,Done,AI tutor endpoint completed,Supports student tutoring flow,Efe Günay,https://github.com/COMP302-MEF/COMP302/commit/95dcd0b
+Sprint 2,S2-T16,status,To Do,In Progress,Objective achievement handling started,Supports objective-based scoring,Demir Çalışır,https://github.com/COMP302-MEF/COMP302/commit/95dcd0b
+Sprint 2,S2-T16,status,In Progress,Done,Objective achievement handling completed,Supports score rules,Berke Karakuş,https://github.com/COMP302-MEF/COMP302/commit/95dcd0b
+Sprint 2,S2-T17,status,To Do,In Progress,Duplicate score prevention started,Prevents repeated objective scoring,El Celil Erden,https://github.com/COMP302-MEF/COMP302/commit/95dcd0b
+Sprint 2,S2-T17,status,In Progress,Done,Duplicate score prevention completed,Supports objective scoring correctness,Kıvanç Akay,https://github.com/COMP302-MEF/COMP302/commit/95dcd0b
+Sprint 2,S2-T18,status,To Do,In Progress,Score logs metadata implementation started,Supports scoring evidence,Efe Günay,https://github.com/COMP302-MEF/COMP302/commit/95dcd0b
+Sprint 2,S2-T18,status,In Progress,Done,Score logs metadata completed,Supports demo score log requirement,Demir Çalışır,https://github.com/COMP302-MEF/COMP302/commit/95dcd0b
+Sprint 2,S2-T21,status,To Do,In Progress,Manual grading implementation started,Supports exceptional grading cases,Berke Karakuş,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+Sprint 2,S2-T21,status,In Progress,Done,Manual grading completed,Supports manual grade requirement,El Celil Erden,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+Sprint 2,S2-T23,status,To Do,In Progress,Reset activity implementation started,Supports safe cleanup behavior,Kıvanç Akay,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+Sprint 2,S2-T23,status,In Progress,Done,Reset activity completed,Supports reset requirement,Efe Günay,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+Sprint 2,S2-T28,task_add,N/A,To Do,API key configuration fix task added after testing,Improves AI chat demo reliability,Demir Çalışır,https://github.com/COMP302-MEF/COMP302/commit/56e0c9b
+Sprint 2,S2-T28,status,To Do,Done,API key configuration issue fixed,Supports AI service connection,Demir Çalışır,https://github.com/COMP302-MEF/COMP302/commit/56e0c9b
+Sprint 2,S2-T29,task_add,N/A,To Do,Frontend recovery task added after missing frontend files,Restores frontend demo capability,Berke Karakuş,https://github.com/COMP302-MEF/COMP302/commit/3c87501
+Sprint 2,S2-T29,status,To Do,Done,Frontend files restored,Supports end-to-end frontend demo,Berke Karakuş,https://github.com/COMP302-MEF/COMP302/commit/3c87501

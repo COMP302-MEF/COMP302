@@ -1,0 +1,20 @@
+sprint,item_id,change_type,from_state,to_state,reason,impact_on_sprint_goal,decision_owner,github_link
+Sprint 1,S1-T01,status,To Do,In Progress,Login frontend work started,Supports authentication foundation,Demir Çalışır,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+Sprint 1,S1-T01,status,In Progress,Done,Login frontend page completed,Supports authentication foundation,Berke Karakuş,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+Sprint 1,S1-T02,status,To Do,In Progress,Register frontend work started,Supports authentication foundation,El Celil Erden,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+Sprint 1,S1-T02,status,In Progress,Done,Register frontend page completed,Supports authentication foundation,Kıvanç Akay,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+Sprint 1,S1-T09,status,To Do,In Progress,PostgreSQL connection setup started,Required for persistence,Efe Günay,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+Sprint 1,S1-T09,status,In Progress,Done,Database connection verified,Supports all backend features,Demir Çalışır,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+Sprint 1,S1-T05,status,To Do,In Progress,User model implementation started,Supports authentication and roles,Berke Karakuş,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+Sprint 1,S1-T05,status,In Progress,Done,User model completed,Supports role mapping,El Celil Erden,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+Sprint 1,S1-T06,status,To Do,In Progress,Course model implementation started,Supports course authorization,Kıvanç Akay,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+Sprint 1,S1-T06,status,In Progress,Done,Course model completed,Supports instructor course assignment,Efe Günay,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+Sprint 1,S1-T07,status,To Do,In Progress,Enrollment model implementation started,Supports student course access,Demir Çalışır,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+Sprint 1,S1-T07,status,In Progress,Done,Enrollment model completed,Supports student authorization,Berke Karakuş,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+Sprint 1,S1-T11,status,To Do,In Progress,Instructor course listing endpoint started,Supports Sprint 1 course listing goal,El Celil Erden,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+Sprint 1,S1-T11,status,In Progress,Done,Instructor course listing endpoint completed,Supports Sprint 1 goal,Kıvanç Akay,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+Sprint 1,S1-T13,status,To Do,In Progress,Activity listing endpoint started,Supports activity listing goal,Efe Günay,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+Sprint 1,S1-T13,status,In Progress,Done,Activity listing endpoint completed,Supports Sprint 1 goal,Demir Çalışır,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+Sprint 1,S1-T16,task_add,N/A,To Do,Initial seed data task added after database setup,Improves testability,Berke Karakuş,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+Sprint 1,S1-T16,status,To Do,In Progress,Seed data preparation started,Supports demo testing,El Celil Erden,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+Sprint 1,S1-T16,status,In Progress,Done,Initial seed data completed,Supports Sprint 1 review,Kıvanç Akay,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11

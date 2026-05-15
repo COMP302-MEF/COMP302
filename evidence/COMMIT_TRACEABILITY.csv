@@ -1,0 +1,17 @@
+story_id,task_id,description,commit_hash,github_link
+US-A,S1-T01,Instructor authentication implementation,ab9bb11,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+US-B,S1-T02,Student authentication implementation,ab9bb11,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+US-C,S2-T01,Server side role and course authorization,95dcd0b,https://github.com/COMP302-MEF/COMP302/commit/95dcd0b
+US-D,S1-T04,Instructor assigned course listing,ab9bb11,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+US-E,S1-T05,Course activity listing by activity number and status,ab9bb11,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+US-F,S2-T02,Instructor creates activity with text and objectives,ab9bb11,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+US-G,S2-T03,Instructor updates activity text and objectives,ab9bb11,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+US-H,S2-T04,Instructor starts and ends activity,ab9bb11,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+US-I,S2-T05,Student accesses only authorized ACTIVE activity,95dcd0b,https://github.com/COMP302-MEF/COMP302/commit/95dcd0b
+US-J,S2-T06,Student AI tutoring flow with one guiding question,95dcd0b,https://github.com/COMP302-MEF/COMP302/commit/95dcd0b
+US-K,S2-T07,Objective based scoring score logs metadata and mini lesson,95dcd0b,https://github.com/COMP302-MEF/COMP302/commit/95dcd0b
+US-L,S2-T09,Instructor manual grading with score log,ab9bb11,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+US-M,S2-T10,Instructor reset activity deletes scores and closes activity,ab9bb11,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11
+FIX,S2-F01,API key and AI service configuration fixed,56e0c9b,https://github.com/COMP302-MEF/COMP302/commit/56e0c9b
+FIX,S2-F02,Frontend files restored after missing file issue,3c87501,https://github.com/COMP302-MEF/COMP302/commit/3c87501
+NOTE,GENERAL,Some final integration work is grouped in commit ab9bb11 and frontend recovery commits 4d2ae53 and 3c87501,ab9bb11,https://github.com/COMP302-MEF/COMP302/commit/ab9bb11

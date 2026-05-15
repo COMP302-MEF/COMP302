@@ -1,0 +1,19 @@
+activity_type,task_id,task_name,actor,details
+task_created,S1-T01,Create frontend login page,Demir Çalışır,Task created for Sprint 1 login frontend
+status_changed,S1-T01,Create frontend login page,Berke Karakuş,Changed from To Do to In Progress
+status_changed,S1-T01,Create frontend login page,Berke Karakuş,Changed from In Progress to Done
+task_created,S1-T09,Configure PostgreSQL database connection,Efe Günay,Task created for database setup
+status_changed,S1-T09,Configure PostgreSQL database connection,Demir Çalışır,Changed from In Progress to Done
+task_created,S2-T01,Add token-based authentication to backend,Demir Çalışır,Task created for Sprint 2 authorization
+status_changed,S2-T01,Add token-based authentication to backend,Berke Karakuş,Changed from To Do to In Progress
+status_changed,S2-T01,Add token-based authentication to backend,Berke Karakuş,Changed from In Progress to Done
+task_created,S2-T13,Implement AI tutor chat endpoint,Kıvanç Akay,Task created for AI tutoring flow
+status_changed,S2-T13,Implement AI tutor chat endpoint,Efe Günay,Changed from To Do to In Progress
+status_changed,S2-T13,Implement AI tutor chat endpoint,Efe Günay,Changed from In Progress to Done
+task_created,S2-T18,Implement score logs with metadata,Efe Günay,Task created for scoring evidence
+status_changed,S2-T18,Implement score logs with metadata,Demir Çalışır,Changed from To Do to In Progress
+status_changed,S2-T18,Implement score logs with metadata,Demir Çalışır,Changed from In Progress to Done
+task_created,S2-T28,Fix OpenRouter API key configuration,Demir Çalışır,Added after AI service 401/502 issue
+status_changed,S2-T28,Fix OpenRouter API key configuration,Demir Çalışır,Changed from To Do to Done
+task_created,S2-T29,Restore missing frontend files,Berke Karakuş,Added after frontend files were missing
+status_changed,S2-T29,Restore missing frontend files,Berke Karakuş,Changed from To Do to Done

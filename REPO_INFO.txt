@@ -1,0 +1,26 @@
+GitHub Repository URL:https://github.com/COMP302-MEF/COMP302/tree/sprint-2-dev
+
+
+Default Branch:
+sprint-2-dev
+
+Sprint Release Tags:
+sprint-1
+sprint-2
+
+Backend Run Command:
+cd source_code/backend
+uvicorn main:app --reload
+
+Seed Command:
+cd source_code/backend
+python seed.py
+
+Frontend Entry Point:
+source_code/frontend/login.html
+
+Demo Accounts:
+Instructor A: hoca_a@test.com / 123
+Instructor B: hoca_b@test.com / 123
+Student 1: ogr_1@test.com / 123
+Student 2: ogr_2@test.com / 123
